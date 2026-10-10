@@ -12,6 +12,8 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } },
 };
 let student = store.get('pp.student');
+// Re-ask for details if a required field was added after this student signed in
+if (student && (CONFIG.teachers || []).length && !student.teacher) student = null;
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -25,7 +27,7 @@ function typeset(el) {
 
 function renderWho() {
   who.innerHTML = student
-    ? `${esc(student.name)} · ${esc(student.block)} <button id="switch">Not you?</button>`
+    ? `${esc(student.name)} · ${student.teacher ? esc(student.teacher) + ' · ' : ''}Block ${esc(student.block)} <button id="switch">Not you?</button>`
     : '';
   const b = document.getElementById('switch');
   if (b) b.onclick = () => { student = null; store.set('pp.student', null); location.hash = '#/'; route(); };
@@ -46,12 +48,15 @@ function route() {
 // ---------- sign in ----------
 function signIn() {
   const blocks = CONFIG.blocks || [];
+  const teachers = CONFIG.teachers || [];
   app.innerHTML = `
     <div class="card signin">
       <h1>Welcome</h1>
       <p class="muted">Enter your name so your teacher can see your practice.</p>
       <label class="field" for="nm">First and last name</label>
       <input type="text" id="nm" autocomplete="name">
+      ${teachers.length ? `<label class="field" for="tc">Teacher</label>
+      <select id="tc"><option value="">Choose your teacher</option>${teachers.map(t => `<option>${esc(t)}</option>`).join('')}</select>` : ''}
       <label class="field" for="bk">Class block</label>
       ${blocks.length
         ? `<select id="bk"><option value="">Choose your block</option>${blocks.map(b => `<option>${esc(b)}</option>`).join('')}</select>`
@@ -62,10 +67,12 @@ function signIn() {
   const go = () => {
     const name = document.getElementById('nm').value.trim().replace(/\s+/g, ' ');
     const block = document.getElementById('bk').value.trim();
+    const teacher = teachers.length ? document.getElementById('tc').value : '';
     const err = document.getElementById('err');
     if (name.split(' ').length < 2) { err.hidden = false; err.textContent = 'Please enter your first and last name.'; return; }
+    if (teachers.length && !teacher) { err.hidden = false; err.textContent = 'Please choose your teacher.'; return; }
     if (!block) { err.hidden = false; err.textContent = 'Please choose your class block.'; return; }
-    student = { name, block };
+    student = { name, teacher, block };
     store.set('pp.student', student);
     route();
   };
@@ -275,7 +282,7 @@ async function finish(state) {
 
   const status = document.getElementById('logstatus');
   const payload = {
-    name: student.name, block: student.block, skill: skill.title, level: skill.levels[level].name,
+    name: student.name, teacher: student.teacher || '', block: student.block, skill: skill.title, level: skill.levels[level].name,
     score, total, percent: Math.round(pct * 100), missed: missed.join('; '), minutes,
     finishedAt: new Date().toISOString(), version: CONFIG.version,
   };

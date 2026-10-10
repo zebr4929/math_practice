@@ -33,7 +33,7 @@ Test it: finish one set on the site. A new tab named **Log** appears in your she
 
 ### What gets recorded
 
-One row per finished set: timestamp, name, block, skill, level, score, percent, the types of problems missed, and minutes spent. Nothing else about the student is collected.
+One row per finished set: timestamp, name, teacher, block, skill, level, score, percent, the types of problems missed, and minutes spent. Nothing else about the student is collected.
 
 ### If you change Code.gs later
 
@@ -41,5 +41,5 @@ Use **Deploy > Manage deployments**, edit the existing deployment, and choose **
 
 ## Everyday edits
 
-- **Class blocks:** edit the `blocks` list in `precalc/js/config.js`.
+- **Teachers and class blocks:** edit the `teachers` and `blocks` lists in `precalc/js/config.js`.
 - **Problems per set:** edit `problemsPerSet` in `precalc/js/config.js`.

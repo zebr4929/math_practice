@@ -4,8 +4,10 @@ export const CONFIG = {
   // Leave it empty and the site still works, it just does not record results.
   sheetUrl: '',
 
-  // Shown as a dropdown on the sign-in screen. Edit to match your sections.
-  blocks: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+  // Dropdowns on the sign-in screen. Edit these lists to match your classes.
+  // Teacher names appear exactly as typed here (and in the Google Sheet).
+  teachers: ['Mr. Zebracki'],
+  blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
   version: '1.0',

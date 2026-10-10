@@ -4,7 +4,7 @@
  * then deploy it as a web app (see SETUP.md, Part 2).
  */
 const SHEET_NAME = 'Log';
-const HEADERS = ['Timestamp', 'Name', 'Block', 'Skill', 'Level', 'Score', 'Out of', 'Percent', 'Missed problem types', 'Minutes', 'Site version'];
+const HEADERS = ['Timestamp', 'Name', 'Teacher', 'Block', 'Skill', 'Level', 'Score', 'Out of', 'Percent', 'Missed problem types', 'Minutes', 'Site version'];
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -21,11 +21,11 @@ function doPost(e) {
     }
     const clean = v => String(v == null ? '' : v).slice(0, 300).replace(/^[=+\-@]/, "'$&");
     sh.appendRow([
-      new Date(), clean(d.name), clean(d.block), clean(d.skill), clean(d.level),
+      new Date(), clean(d.name), clean(d.teacher), clean(d.block), clean(d.skill), clean(d.level),
       Number(d.score) || 0, Number(d.total) || 0, (Number(d.percent) || 0) / 100,
       clean(d.missed), Number(d.minutes) || 0, clean(d.version),
     ]);
-    sh.getRange(sh.getLastRow(), 8).setNumberFormat('0%');
+    sh.getRange(sh.getLastRow(), 9).setNumberFormat('0%');
     return ContentService.createTextOutput('ok');
   } finally {
     lock.releaseLock();
