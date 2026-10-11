@@ -1,5 +1,5 @@
 // Skill: Carrying negative signs (prerequisite drills built from Unit 1 errors)
-import { F, Frac, randInt, pick, nonzero, paren, factorTex } from '../math.js';
+import { F, Frac, randInt, pick, nonzero, paren, factorTex } from '../math.js?v=1.1';
 
 export const skill = {
   id: 'negatives',

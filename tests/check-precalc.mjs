@@ -1,6 +1,9 @@
-import { SKILLS } from '../precalc/js/skills/index.js';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, Frac, parse, evaluate } from '../precalc/js/math.js';
-import { _test } from '../precalc/js/skills/holes.js';
+// Import with the same ?v= stamp the site uses, so there is one copy of each module.
+import { CONFIG } from '../precalc/js/config.js';
+const v = '?v=' + CONFIG.version;
+const { SKILLS } = await import('../precalc/js/skills/index.js' + v);
+const { makeRng, checkNumber, checkList, checkPoint, checkRule, Frac } = await import('../precalc/js/math.js' + v);
+const { _test } = await import('../precalc/js/skills/holes.js' + v);
 let errors = 0, count = 0;
 const fail = (m, p) => { if (errors++ < 15) console.log('FAIL', m, JSON.stringify(p?.prompt)?.slice(0,300)); };
 const fmt = a => a instanceof Frac ? a.text() : String(a);
