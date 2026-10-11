@@ -72,3 +72,31 @@ T(checkPoint('(4, 0)', [4,0]), true); T(checkPoint('(-4, 4/9)', [4,0]), false);
 T(checkRule('2+3(n-1)', n=>2+3*(n-1)), true); T(checkRule('3n-1', n=>2+3*(n-1)), true); T(checkRule('2+3n', n=>2+3*(n-1)), false);
 T(checkRule('96(1/2)^(n-1)', n=>96*0.5**(n-1)), true); T(checkRule('a_n = 48(.5)^(n-2)', n=>96*0.5**(n-1)), true); T(checkRule('g(n)=12·2^(n−1)', n=>12*2**(n-1)), true);
 console.log('problems', count, 'errors', errors);
+
+// Independent numeric check of the leading-coefficient / hole skill
+{
+  const { skill: rs } = await import('../precalc/js/skills/rational-signs.js' + v);
+  let bad = 0, negs = { lead: 0, rev: 0, flip: 0, exp: 0 };
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 4000; seed++) {
+    const p = rs.generate(L, makeRng(seed * 104729 + L));
+    const { num, den, sharedTop, sharedBot, K, D, sgn } = p._check;
+    const val = (fs, x) => fs.reduce((s, f) => s * Math.pow(f.a * x + f.b, f.m), 1);
+    const f = x => sgn * K * val([sharedTop, ...num], x) / (D * val([sharedBot, ...den], x));
+    const HA = Frac.of(p.parts[0].answer).value();
+    const big = f(1e7), bigNeg = f(-1e7);
+    if (Math.abs(big - HA) > 1e-3 * Math.max(1, Math.abs(HA)) || Math.abs(bigNeg - HA) > 1e-3 * Math.max(1, Math.abs(HA))) { bad++; if (bad < 5) console.log('HA mismatch', L, p.prompt, HA, big); }
+    const [hx, hy] = p.parts[1].answer.map(z => Frac.of(z).value());
+    const near = (f(hx + 1e-6) + f(hx - 1e-6)) / 2;
+    if (!isFinite(near) || Math.abs(near - hy) > 1e-4 * Math.max(1, Math.abs(hy))) { bad++; if (bad < 5) console.log('hole mismatch', L, p.prompt, hy, near); }
+    if (sgn < 0) negs.lead++;
+    if ([...num, ...den].some(q => q.a < 0)) negs.rev++;
+    if (sharedBot.a < 0) negs.flip++;
+    if ([...num, ...den].some(q => q.a < 0 && q.m > 1)) negs.exp++;
+    if (L === 1 && [...num, ...den].some(q => q.a < 0)) { bad++; console.log('easy has backwards factor'); }
+    if (L === 2 && ![...num, ...den].some(q => q.a < 0)) { bad++; console.log('medium lacks backwards factor'); }
+    if (L === 3 && ![...num, ...den].some(q => q.a < 0 && q.m > 1)) { bad++; console.log('challenging lacks backwards exponent'); }
+  }
+  console.log('rational-signs numeric check: bad =', bad, JSON.stringify(negs));
+  errors += bad;
+}
+console.log('total errors', errors);

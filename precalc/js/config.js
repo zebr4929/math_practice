@@ -10,5 +10,5 @@ export const CONFIG = {
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '1.1',
+  version: '1.2',
 };

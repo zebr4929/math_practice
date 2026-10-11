@@ -1,6 +1,6 @@
-import { SKILLS, byId } from './skills/index.js?v=1.1';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.1';
-import { CONFIG } from './config.js?v=1.1';
+import { SKILLS, byId } from './skills/index.js?v=1.2';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.2';
+import { CONFIG } from './config.js?v=1.2';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
