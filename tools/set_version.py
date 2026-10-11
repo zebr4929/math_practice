@@ -3,7 +3,7 @@ Usage: python3 tools/set_version.py 1.2
 """
 import re, sys, pathlib
 v = sys.argv[1]
-root = pathlib.Path(__file__).resolve().parent.parent / 'precalc'
+root = pathlib.Path(__file__).resolve().parent.parent
 pat = re.compile(r"""((?:from\s+|src=|href=)['"])(\.{0,2}/?[\w./-]+?\.(?:js|css))(?:\?v=[\w.]+)?(['"])""")
 for f in [root / 'index.html', *root.glob('js/**/*.js')]:
     s = f.read_text()

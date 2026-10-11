@@ -121,3 +121,7 @@ input[type=text]:focus, select:focus { outline: none; border-color: var(--maroon
 .review-list { margin: 10px 0 0; padding-left: 20px; }
 
 .katex { font-size: 1.08em; }
+
+.keys { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.key { font: inherit; min-width: 40px; padding: 4px 10px; border: 1.5px solid var(--grey-mid); border-radius: 6px; background: #fff; cursor: pointer; }
+.key:hover { border-color: var(--maroon); }

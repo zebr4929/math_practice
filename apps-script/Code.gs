@@ -7,7 +7,7 @@
  * so a set a student quits partway through still shows up ("Stopped: 2 of 6").
  */
 const SHEET_NAME = 'Log';
-const HEADERS = ['Last updated', 'Name', 'Teacher', 'Block', 'Skill', 'Level', 'Status',
+const HEADERS = ['Last updated', 'Name', 'Course', 'Teacher', 'Block', 'Skill', 'Level', 'Status',
   'Correct', 'Attempted', 'Set size', 'Percent correct', 'Missed problem types', 'Minutes', 'Set ID', 'Site version'];
 const COL = name => HEADERS.indexOf(name) + 1;
 
@@ -39,7 +39,7 @@ function doPost(e) {
     const sh = getLogSheet_();
     const clean = v => String(v == null ? '' : v).slice(0, 300).replace(/^[=+\-@]/, "'$&");
     const row = [
-      new Date(), clean(d.name), clean(d.teacher), clean(d.block), clean(d.skill), clean(d.level), clean(d.status),
+      new Date(), clean(d.name), clean(d.course), clean(d.teacher), clean(d.block), clean(d.skill), clean(d.level), clean(d.status),
       Number(d.score) || 0, Number(d.attempted) || 0, Number(d.total) || 0, (Number(d.percent) || 0) / 100,
       clean(d.missed), Number(d.minutes) || 0, clean(d.setId), clean(d.version),
     ];

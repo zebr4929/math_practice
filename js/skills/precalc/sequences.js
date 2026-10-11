@@ -1,5 +1,5 @@
 // Skills: arithmetic and geometric sequence rules (Lesson 2.1)
-import { F, Frac, randInt, pick, nonzero, paren, signed } from '../math.js?v=1.2';
+import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=1.3';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'Write the rule from the first few terms' },
@@ -10,6 +10,7 @@ const LEVELS = {
 export const arithmetic = {
   id: 'arithmetic',
   title: 'Arithmetic Sequences',
+  course: 'precalc',
   group: 'Unit 2: Sequences',
   blurb: 'Write a rule for aₙ and use it to find a later term.',
   levels: LEVELS,
@@ -19,6 +20,7 @@ export const arithmetic = {
 export const geometric = {
   id: 'geometric',
   title: 'Geometric Sequences',
+  course: 'precalc',
   group: 'Unit 2: Sequences',
   blurb: 'Write a rule for gₙ and use it to find a later term.',
   levels: LEVELS,

@@ -1,9 +1,10 @@
 // Skill: Holes vs. zeros vs. vertical asymptotes in factored rational functions
-import { F, Frac, randInt, pick, nonzero, shuffle, distinctInts, factorTex, paren } from '../math.js?v=1.2';
+import { F, Frac, randInt, pick, nonzero, shuffle, distinctInts, factorTex, paren } from '../../math.js?v=1.3';
 
 export const skill = {
   id: 'holes',
   title: 'Holes, Zeros & Asymptotes',
+  course: 'precalc',
   group: 'Unit 1: Rational functions',
   blurb: 'Decide what happens at each x-value: what cancels, what is left over, and what multiplicity does.',
   levels: {

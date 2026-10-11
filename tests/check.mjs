@@ -1,9 +1,9 @@
 // Import with the same ?v= stamp the site uses, so there is one copy of each module.
-import { CONFIG } from '../precalc/js/config.js';
+import { CONFIG } from '../js/config.js';
 const v = '?v=' + CONFIG.version;
-const { SKILLS } = await import('../precalc/js/skills/index.js' + v);
-const { makeRng, checkNumber, checkList, checkPoint, checkRule, Frac } = await import('../precalc/js/math.js' + v);
-const { _test } = await import('../precalc/js/skills/holes.js' + v);
+const { SKILLS } = await import('../js/skills/index.js' + v);
+const { makeRng, checkNumber, checkList, checkPoint, checkRule, Frac } = await import('../js/math.js' + v);
+const { _test } = await import('../js/skills/precalc/holes.js' + v);
 let errors = 0, count = 0;
 const fail = (m, p) => { if (errors++ < 15) console.log('FAIL', m, JSON.stringify(p?.prompt)?.slice(0,300)); };
 const fmt = a => a instanceof Frac ? a.text() : String(a);
@@ -75,7 +75,7 @@ console.log('problems', count, 'errors', errors);
 
 // Independent numeric check of the leading-coefficient / hole skill
 {
-  const { skill: rs } = await import('../precalc/js/skills/rational-signs.js' + v);
+  const { skill: rs } = await import('../js/skills/precalc/rational-signs.js' + v);
   let bad = 0, negs = { lead: 0, rev: 0, flip: 0, exp: 0 };
   for (const L of [1, 2, 3]) for (let seed = 1; seed <= 4000; seed++) {
     const p = rs.generate(L, makeRng(seed * 104729 + L));
@@ -97,6 +97,69 @@ console.log('problems', count, 'errors', errors);
     if (L === 3 && ![...num, ...den].some(q => q.a < 0 && q.m > 1)) { bad++; console.log('challenging lacks backwards exponent'); }
   }
   console.log('rational-signs numeric check: bad =', bad, JSON.stringify(negs));
+  errors += bad;
+}
+
+
+// ---------- Algebra II ----------
+{
+  const { skill: fac } = await import('../js/skills/alg2/factoring.js' + v);
+  const { skill: qf } = await import('../js/skills/alg2/quadratic-formula.js' + v);
+  let bad = 0; const tags = {};
+  const plain = t => t.replace(/\$/g, '').replace(/\^\{?2\}?/g, '^2').replace(/\\cdot/g, '*');
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 4000; seed++) {
+    const p = fac.generate(L, makeRng(seed * 7 + L));
+    tags['fac' + L + ' ' + p.tag] = (tags['fac' + L + ' ' + p.tag] || 0) + 1;
+    const ans = plain(p.parts[0].answerTex);
+    const chk = p.parts[0].check;
+    if (!chk(ans).ok) { bad++; if (bad < 6) console.log('factoring rejects own answer', p.prompt, ans, chk(ans)); }
+    // the expanded trinomial itself must NOT be accepted
+    const tri = p.prompt.match(/\$\\;(.+)\$/)[1];
+    if (chk(tri).ok) { bad++; console.log('accepted unfactored', tri); }
+    // reversed factor order accepted
+    const fs = ans.match(/\([^)]*\)(\^2)?/g);
+    if (fs.length === 2 && !chk(fs[1] + fs[0]).ok) { bad++; console.log('order', ans); }
+    // level rules
+    const A = +((tri.match(/^(\d*)x\^2/) || [])[1] || 1);
+    const isPrime = n => n > 1 && [...Array(n).keys()].slice(2).every(d => n % d);
+    if (L === 1 && A !== 1) { bad++; console.log('L1 a', tri); }
+    if (L === 2 && p.tag === 'prime leading coefficient' && !isPrime(A)) { bad++; console.log('L2 prime', tri); }
+    if (L === 3 && (A < 4 || isPrime(A))) { bad++; console.log('L3 composite', tri); }
+  }
+  // partial factoring is rejected, e.g. 2x^2+... -> (2x+4)(x-1)/2 style or leaving a quadratic
+  {
+    const p = fac.generate(1, makeRng(5)); const chk = p.parts[0].check;
+    const tri = p.prompt.match(/\$\\;(.+)\$/)[1];
+    const r = chk('(' + tri + ')'); if (r.ok) { bad++; console.log('accepted parenthesized trinomial'); }
+  }
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 4000; seed++) {
+    const p = qf.generate(L, makeRng(seed * 13 + L));
+    tags['qf' + L + ' ' + p.tag] = (tags['qf' + L + ' ' + p.tag] || 0) + 1;
+    const { a, b, c, D, A, B, r, d, im } = p._check;
+    // canonical answer matches actual roots
+    const re = -b / (2 * a), imPart = Math.sqrt(Math.abs(D)) / (2 * a);
+    if (Math.abs(A / d - re) > 1e-9 || Math.abs(B * Math.sqrt(r) / d - imPart) > 1e-9) { bad++; console.log('qf math', p.prompt); }
+    if (im !== (b * b - 4 * a * c < 0)) { bad++; console.log('qf im'); }
+    const rad = (B === 1 ? '' : B) + (im ? 'i' : '') + 'sqrt(' + r + ')';
+    const fin = d === 1 ? `${A} +- ${rad}` : `(${A} +- ${rad})/${d}`;
+    const [p1, p2] = p.parts;
+    const kk = Math.round(Math.sqrt(Math.abs(D) / r));
+    if (!p1.check((kk === 1 ? '' : kk) + (im ? 'i' : '') + '√' + r).ok) { bad++; console.log('rad rejects own', p.prompt); }
+    if (!p2.check(fin).ok) { bad++; console.log('final rejects own', p.prompt, fin); }
+    if (!p2.check(fin.replace('+-', '±')).ok) { bad++; }
+    // unreduced but equal must be rejected with a message
+    const unreduced = `(${-b} +- ${kk}${im ? 'i' : ''}√${r})/${2 * a}`;
+    const ur = p2.check(unreduced);
+    if (d !== 2 * a || A !== -b) { if (ur.ok || !ur.msg) { bad++; console.log('accepted unreduced', unreduced, p.prompt); } }
+    // unsimplified radical rejected
+    const raw = p1.check((im ? 'i' : '') + '√' + Math.abs(D));
+    if (raw.ok) { bad++; console.log('accepted raw radical'); }
+    if (L === 1 && (im || d !== 1)) { bad++; console.log('L1 rule'); }
+    if (L === 2 && im) { bad++; console.log('L2 rule'); }
+    if (L === 3 && !im) { bad++; console.log('L3 rule'); }
+  }
+  console.log(JSON.stringify(tags, null, 0));
+  console.log('algebra II check: bad =', bad);
   errors += bad;
 }
 console.log('total errors', errors);

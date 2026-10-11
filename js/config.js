@@ -4,11 +4,19 @@ export const CONFIG = {
   // Leave it empty and the site still works, it just does not record results.
   sheetUrl: 'https://script.google.com/macros/s/AKfycbyHIyPoyCjd-Y4XQJchGQPoxcxKQrsBOWJXsa2NM6SDiujHyCT1Ahd5tjJpR0ZO4BOi/exec',
 
+  // Courses on the sign-in screen. `skills` says which skill set the course sees
+  // (each skill file names its set: 'precalc' or 'alg2').
+  courses: [
+    { name: 'AP Precalculus', skills: 'precalc' },
+    { name: 'Accelerated Algebra II', skills: 'alg2' },
+    { name: 'Honors Algebra II', skills: 'alg2' },
+  ],
+
   // Dropdowns on the sign-in screen. Edit these lists to match your classes.
   // Teacher names appear exactly as typed here (and in the Google Sheet).
   teachers: ['Mr. Zebracki'],
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '1.2',
+  version: '1.3',
 };

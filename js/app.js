@@ -1,6 +1,6 @@
-import { SKILLS, byId } from './skills/index.js?v=1.2';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.2';
-import { CONFIG } from './config.js?v=1.2';
+import { SKILLS, byId } from './skills/index.js?v=1.3';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.3';
+import { CONFIG } from './config.js?v=1.3';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -14,6 +14,9 @@ const store = {
 let student = store.get('pp.student');
 // Re-ask for details if a required field was added after this student signed in
 if (student && (CONFIG.teachers || []).length && !student.teacher) student = null;
+if (student && !(CONFIG.courses || []).some(c => c.name === student.course)) student = null;
+const courseOf = s => (CONFIG.courses || []).find(c => c.name === s?.course);
+const mySkills = () => SKILLS.filter(sk => sk.course === courseOf(student)?.skills);
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -27,7 +30,7 @@ function typeset(el) {
 
 function renderWho() {
   who.innerHTML = student
-    ? `${esc(student.name)} · ${student.teacher ? esc(student.teacher) + ' · ' : ''}Block ${esc(student.block)} <button id="switch">Not you?</button>`
+    ? `${esc(student.name)} · ${esc(student.course)} · ${student.teacher ? esc(student.teacher) + ' · ' : ''}Block ${esc(student.block)} <button id="switch">Not you?</button>`
     : '';
   const b = document.getElementById('switch');
   if (b) b.onclick = () => { student = null; store.set('pp.student', null); location.hash = '#/'; route(); };
@@ -41,7 +44,7 @@ function route() {
   renderWho();
   if (!student) return signIn();
   const parts = location.hash.replace(/^#\/?/, '').split('/');
-  if (parts[0] === 'practice' && byId[parts[1]] && ['1', '2', '3'].includes(parts[2])) return startSet(byId[parts[1]], +parts[2]);
+  if (parts[0] === 'practice' && byId[parts[1]] && mySkills().includes(byId[parts[1]]) && ['1', '2', '3'].includes(parts[2])) return startSet(byId[parts[1]], +parts[2]);
   home();
 }
 
@@ -49,12 +52,15 @@ function route() {
 function signIn() {
   const blocks = CONFIG.blocks || [];
   const teachers = CONFIG.teachers || [];
+  const courses = CONFIG.courses || [];
   app.innerHTML = `
     <div class="card signin">
       <h1>Welcome</h1>
       <p class="muted">Enter your name so your teacher can see your practice.</p>
       <label class="field" for="nm">First and last name</label>
       <input type="text" id="nm" autocomplete="name">
+      <label class="field" for="cs">Course</label>
+      <select id="cs"><option value="">Choose your course</option>${courses.map(c => `<option>${esc(c.name)}</option>`).join('')}</select>
       ${teachers.length ? `<label class="field" for="tc">Teacher</label>
       <select id="tc"><option value="">Choose your teacher</option>${teachers.map(t => `<option>${esc(t)}</option>`).join('')}</select>` : ''}
       <label class="field" for="bk">Class block</label>
@@ -68,11 +74,13 @@ function signIn() {
     const name = document.getElementById('nm').value.trim().replace(/\s+/g, ' ');
     const block = document.getElementById('bk').value.trim();
     const teacher = teachers.length ? document.getElementById('tc').value : '';
+    const course = document.getElementById('cs').value;
     const err = document.getElementById('err');
     if (name.split(' ').length < 2) { err.hidden = false; err.textContent = 'Please enter your first and last name.'; return; }
+    if (!course) { err.hidden = false; err.textContent = 'Please choose your course.'; return; }
     if (teachers.length && !teacher) { err.hidden = false; err.textContent = 'Please choose your teacher.'; return; }
     if (!block) { err.hidden = false; err.textContent = 'Please choose your class block.'; return; }
-    student = { name, teacher, block };
+    student = { name, course, teacher, block };
     store.set('pp.student', student);
     route();
   };
@@ -83,13 +91,15 @@ function signIn() {
 // ---------- home ----------
 function home() {
   const best = store.get('pp.best', {});
-  const groups = [...new Set(SKILLS.map(s => s.group))];
+  const list = mySkills();
+  const groups = [...new Set(list.map(s => s.group))];
   app.innerHTML = `
+    <div class="crumb muted">${esc(student.course)}</div>
     <h1>Choose a skill</h1>
     <p class="muted">Each set has ${SET_SIZE} problems. Start at Easy and move up when you can get most of a set right.</p>
     ${groups.map(g => `
       <div class="group-title">${esc(g)}</div>
-      ${SKILLS.filter(s => s.group === g).map(s => `
+      ${list.filter(s => s.group === g).map(s => `
         <div class="card skill">
           <div><h2>${esc(s.title)}</h2><p class="muted">${esc(s.blurb)}</p></div>
           <div class="levels">
@@ -153,10 +163,18 @@ function showProblem(state) {
     } else {
       const inp = card.querySelector(`#in${k}`);
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('check')?.click(); });
-      if (part.type === 'rule') {
+      card.querySelectorAll(`[data-part="${k}"] .key`).forEach(btn => btn.onclick = () => {
+        if (state.checked) return;
+        const s0 = inp.selectionStart ?? inp.value.length, s1 = inp.selectionEnd ?? s0;
+        inp.value = inp.value.slice(0, s0) + btn.dataset.ins + inp.value.slice(s1);
+        inp.focus(); inp.setSelectionRange(s0 + btn.dataset.ins.length, s0 + btn.dataset.ins.length);
+        inp.dispatchEvent(new Event('input'));
+      });
+      if (part.type === 'rule' || part.preview) {
         const pv = card.querySelector(`#pv${k}`);
+        const prev = part.preview || previewTex;
         inp.addEventListener('input', () => {
-          const t = previewTex(inp.value);
+          const t = prev(inp.value);
           pv.innerHTML = t === null ? '<span>…</span>' : t ? `You typed: $${t}$` : '';
           typeset(pv);
         });
@@ -178,7 +196,9 @@ function partHtml(part, k) {
   }
   return `<div class="part" data-part="${k}"><div class="part-label"><label for="in${k}">${part.label}</label></div>
     <div class="answer-row"><input type="text" id="in${k}" autocomplete="off" spellcheck="false" placeholder="${esc(part.placeholder || '')}"></div>
-    ${part.type === 'rule' ? `<div class="preview" id="pv${k}"></div><div class="help">${esc(part.help || '')}</div>` : ''}
+    ${part.keys ? `<div class="keys">${part.keys.map(x => `<button type="button" class="key" data-ins="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''}
+    ${part.type === 'rule' || part.preview ? `<div class="preview" id="pv${k}"></div>` : ''}
+    ${part.help ? `<div class="help">${esc(part.help)}</div>` : ''}
     ${part.hint ? `<div class="help">${esc(part.hint)}</div>` : ''}
     <div class="fb"></div></div>`;
 }
@@ -189,12 +209,13 @@ function answerTex(part) {
     const dec = !fr.isInt() && fr.terminatingDecimal();
     return `$${fr.tex()}$` + (dec ? ` (or ${dec})` : '');
   };
+  if (part.answerTex) return part.answerTex;
   switch (part.type) {
     case 'number': return f(part.answer);
     case 'list': return part.answer.length ? part.answer.map(x => `$${Frac.of(x).tex()}$`).join(', ') : 'none';
     case 'point': return part.answer ? `$\\left(${Frac.of(part.answer[0]).tex()},\\ ${Frac.of(part.answer[1]).tex()}\\right)$` : 'none';
     case 'mc': return part.choices[part.answer];
-    case 'rule': return part.answerTex || 'see the worked solution';
+    case 'rule': return 'see the worked solution';
   }
 }
 
@@ -212,7 +233,8 @@ function check(state) {
       r = sel ? { ok: +sel.dataset.choice === part.answer } : { ok: false, msg: 'Choose an answer.', format: true };
     } else {
       const v = card.querySelector(`#in${k}`).value;
-      r = part.type === 'number' ? checkNumber(v, part.answer)
+      r = part.check ? part.check(v)
+        : part.type === 'number' ? checkNumber(v, part.answer)
         : part.type === 'list' ? checkList(v, part.answer)
         : part.type === 'point' ? checkPoint(v, part.answer)
         : checkRule(v, part.truth, part.var);
@@ -233,7 +255,7 @@ function check(state) {
     if (part.type === 'mc') box.querySelector(`[data-choice="${part.answer}"]`).classList.add('correct');
     box.querySelector('.fb').innerHTML = r.ok
       ? `<span class="mark-ok">✓ Correct</span>`
-      : `<span class="mark-no">✗ Not quite.</span> <span class="muted">Correct answer: ${answerTex(part)}</span>`;
+      : `<span class="mark-no">✗ Not quite.</span> ${r.msg ? `<span>${esc(r.msg)}</span> ` : ''}<span class="muted">Correct answer: ${answerTex(part)}</span>`;
   });
   document.getElementById('sol').innerHTML = `<div class="solution"><h3>Worked solution</h3>${p.solution}</div>`;
   state.results.push(allOk);
@@ -295,7 +317,7 @@ function progressPayload(state, done) {
   const attempted = results.length, score = results.filter(Boolean).length;
   return {
     setId: state.setId,
-    name: student.name, teacher: student.teacher || '', block: student.block,
+    name: student.name, course: student.course, teacher: student.teacher || '', block: student.block,
     skill: skill.title, level: skill.levels[level].name,
     status: done ? 'Completed' : `Stopped: ${attempted} of ${problems.length}`,
     score, attempted, total: problems.length,
