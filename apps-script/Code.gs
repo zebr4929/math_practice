@@ -91,7 +91,7 @@ function testPost() {
     skill: 'Factoring Quadratics', level: 'Easy', status: 'Stopped: 1 of 6', score: 1, attempted: 1, total: 6, percent: 100,
     missed: '', minutes: 0.5, version: 'test',
   }) } });
-  Logger.log('Result: ' + out);
+  Logger.log('Result: ' + out.getContent());
 }
 
 // Visiting the web app URL in a browser shows this, so you can confirm it is live.
