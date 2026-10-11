@@ -14,9 +14,9 @@ export const CONFIG = {
 
   // Dropdowns on the sign-in screen. Edit these lists to match your classes.
   // Teacher names appear exactly as typed here (and in the Google Sheet).
-  teachers: ['Mr. Zebracki'],
+  teachers: ['Mr. Orthwein', 'Ms. Vreeburg', 'Ms. Welch', 'Mr. Zebracki'],
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '1.3',
+  version: '1.4',
 };
