@@ -18,7 +18,10 @@ function getLogSheet_() {
   if (sh && sh.getLastRow() > 0) {
     const current = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     if (current.join('|') !== HEADERS.join('|')) {
-      sh.setName(SHEET_NAME + ' (old ' + Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd HHmm') + ')');
+      const stamp = Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd HHmmss');
+      let name = SHEET_NAME + ' (old ' + stamp + ')', n = 2;
+      while (ss.getSheetByName(name)) name = SHEET_NAME + ' (old ' + stamp + ' ' + n++ + ')';
+      sh.setName(name);
       sh = null;
     }
   }
@@ -63,9 +66,32 @@ function doPost(e) {
     }
     sh.getRange(target, COL('Percent correct')).setNumberFormat('0%');
     return ContentService.createTextOutput('ok');
+  } catch (err) {
+    logError_(err, e);
+    return ContentService.createTextOutput('error');
   } finally {
     lock.releaseLock();
   }
+}
+
+function logError_(err, e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName('Errors') || ss.insertSheet('Errors');
+    if (sh.getLastRow() === 0) sh.appendRow(['Time', 'Error', 'Data received']);
+    sh.appendRow([new Date(), String(err && err.stack || err), e && e.postData ? String(e.postData.contents).slice(0, 500) : '']);
+  } catch (ignored) { /* nothing else we can do */ }
+}
+
+// Select testPost in the toolbar and click Run to send a fake result.
+// A "Test Student" row should appear in Log; any error shows in the log below the editor.
+function testPost() {
+  const out = doPost({ postData: { contents: JSON.stringify({
+    setId: 'test-' + Date.now(), name: 'Test Student', course: 'Honors Algebra II', teacher: 'Mr. Zebracki', block: 'A',
+    skill: 'Factoring Quadratics', level: 'Easy', status: 'Stopped: 1 of 6', score: 1, attempted: 1, total: 6, percent: 100,
+    missed: '', minutes: 0.5, version: 'test',
+  }) } });
+  Logger.log('Result: ' + out);
 }
 
 // Visiting the web app URL in a browser shows this, so you can confirm it is live.
