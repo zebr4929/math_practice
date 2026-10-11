@@ -120,7 +120,7 @@ function startSet(skill, level) {
     seen.add(p.prompt);
     problems.push(p);
   }
-  const state = { skill, level, problems, i: 0, results: [], started: Date.now() };
+  const state = { skill, level, problems, i: 0, results: [], started: Date.now(), setId: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) };
   showProblem(state);
 }
 
@@ -237,6 +237,7 @@ function check(state) {
   });
   document.getElementById('sol').innerHTML = `<div class="solution"><h3>Worked solution</h3>${p.solution}</div>`;
   state.results.push(allOk);
+  if (state.results.length < state.problems.length) sendLog(progressPayload(state, false)); // save progress after every problem
   const last = state.i === state.problems.length - 1;
   document.getElementById('acts').innerHTML = `<button class="btn" id="next">${last ? 'See results' : 'Next problem'}</button>`;
   document.getElementById('next').onclick = () => {
@@ -281,21 +282,34 @@ async function finish(state) {
   window.scrollTo(0, 0);
 
   const status = document.getElementById('logstatus');
-  const payload = {
-    name: student.name, teacher: student.teacher || '', block: student.block, skill: skill.title, level: skill.levels[level].name,
-    score, total, percent: Math.round(pct * 100), missed: missed.join('; '), minutes,
-    finishedAt: new Date().toISOString(), version: CONFIG.version,
-  };
-  const ok = await sendLog(payload);
+  const ok = await sendLog(progressPayload(state, true));
   status.className = 'status ' + (ok === true ? 'sent' : 'warn');
   status.textContent = ok === true ? '✓ Result saved for your teacher.'
     : ok === 'off' ? 'Practice mode: results are not being recorded yet.'
     : 'Could not reach the gradebook right now. Your result will be sent next time you finish a set.';
 }
 
+// One row per set in the Sheet. Every update carries the set ID; the Sheet keeps the latest.
+function progressPayload(state, done) {
+  const { skill, level, problems, results } = state;
+  const attempted = results.length, score = results.filter(Boolean).length;
+  return {
+    setId: state.setId,
+    name: student.name, teacher: student.teacher || '', block: student.block,
+    skill: skill.title, level: skill.levels[level].name,
+    status: done ? 'Completed' : `Stopped: ${attempted} of ${problems.length}`,
+    score, attempted, total: problems.length,
+    percent: attempted ? Math.round(100 * score / attempted) : 0,
+    missed: problems.slice(0, attempted).filter((_, k) => !results[k]).map(p => p.tag).join('; '),
+    minutes: Math.round((Date.now() - state.started) / 6000) / 10,
+    version: CONFIG.version,
+  };
+}
+
 async function sendLog(payload) {
   if (!CONFIG.sheetUrl) return 'off';
-  const queue = store.get('pp.queue', []);
+  // keep only the newest update for each set (older ones are superseded)
+  const queue = store.get('pp.queue', []).filter(q => q.setId !== payload.setId);
   queue.push(payload);
   const remaining = [];
   for (const item of queue) {

@@ -33,7 +33,7 @@ Test it: finish one set on the site. A new tab named **Log** appears in your she
 
 ### What gets recorded
 
-One row per finished set: timestamp, name, teacher, block, skill, level, score, percent, the types of problems missed, and minutes spent. Nothing else about the student is collected.
+One row per practice set, updated after every problem the student checks. The Status column shows "Completed" or, if the student quit partway, "Stopped: 2 of 6". Each row also has the name, teacher, block, skill, level, number correct, number attempted, percent correct, the types of problems missed, and minutes spent. Nothing else about the student is collected.
 
 ### If you change Code.gs later
 
