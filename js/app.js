@@ -1,6 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=1.4';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.4';
-import { CONFIG } from './config.js?v=1.4';
+import { SKILLS, byId } from './skills/index.js?v=1.6';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.6';
+import { CONFIG } from './config.js?v=1.6';
+import { makeGrid } from './graph.js?v=1.6';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -126,8 +127,10 @@ function startSet(skill, level) {
   let guard = 0;
   while (problems.length < SET_SIZE && guard++ < 200) {
     const p = skill.generate(level, rng);
-    if (seen.has(p.prompt)) continue;
-    seen.add(p.prompt);
+    // prompts can share wording (e.g. "Graph the parabola"), so compare the underlying problem too
+    const key = p.prompt + JSON.stringify(p._check || {}) + JSON.stringify(p.displayGraph?.labels || []);
+    if (seen.has(key)) continue;
+    seen.add(key);
     problems.push(p);
   }
   const state = { skill, level, problems, i: 0, results: [], started: Date.now(), setId: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) };
@@ -147,13 +150,28 @@ function showProblem(state) {
     <div class="card" id="pcard">
       <div class="prompt">${p.prompt}</div>
       ${p.visual ? `<div class="visual">${p.visual}</div>` : ''}
+      ${p.displayGraph ? `<div class="visual" id="dgraph"></div>` : ''}
       <div id="parts">${p.parts.map((part, k) => partHtml(part, k)).join('')}</div>
       <div id="sol"></div>
       <div class="actions" id="acts"><button class="btn" id="check">Check answer</button></div>
     </div>`;
   const card = document.getElementById('pcard');
+  if (p.displayGraph) {
+    const dg = p.displayGraph, gr = makeGrid({ ...dg.window, interactive: false });
+    if (dg.asymptote !== undefined) gr.asymptote(dg.asymptote);
+    if (dg.fn) gr.curve(dg.fn);
+    for (const l of dg.labels || []) gr.label(l.x, l.y, l.text);
+    document.getElementById('dgraph').appendChild(gr.root);
+  }
+  state.grids = {};
   // wire inputs
   p.parts.forEach((part, k) => {
+    if (part.type === 'graph') {
+      const gr = makeGrid({ ...part.window, snap: part.snap || 1, interactive: true });
+      card.querySelector(`#gr${k}`).appendChild(gr.root);
+      state.grids[k] = gr;
+      return;
+    }
     if (part.type === 'mc') {
       card.querySelectorAll(`[data-part="${k}"] .choice`).forEach(btn => btn.onclick = () => {
         if (state.checked) return;
@@ -189,6 +207,10 @@ function showProblem(state) {
 }
 
 function partHtml(part, k) {
+  if (part.type === 'graph') {
+    return `<div class="part" data-part="${k}"><div class="part-label">${part.label}</div>
+      <div id="gr${k}"></div>${part.help ? `<div class="help">${esc(part.help)}</div>` : ''}<div class="fb"></div></div>`;
+  }
   if (part.type === 'mc') {
     return `<div class="part" data-part="${k}"><div class="part-label">${part.label}</div>
       <div class="choices">${part.choices.map((c, j) => `<button type="button" class="choice" data-choice="${j}">${c}</button>`).join('')}</div>
@@ -228,7 +250,9 @@ function check(state) {
     const box = card.querySelector(`[data-part="${k}"]`);
     const fb = box.querySelector('.fb');
     let r;
-    if (part.type === 'mc') {
+    if (part.type === 'graph') {
+      r = part.check(state.grids[k].getPoints());
+    } else if (part.type === 'mc') {
       const sel = box.querySelector('.choice.sel');
       r = sel ? { ok: +sel.dataset.choice === part.answer } : { ok: false, msg: 'Choose an answer.', format: true };
     } else {
@@ -253,6 +277,7 @@ function check(state) {
     box.classList.add(r.ok ? 'ok' : 'no');
     box.querySelectorAll('input').forEach(i => i.readOnly = true);
     if (part.type === 'mc') box.querySelector(`[data-choice="${part.answer}"]`).classList.add('correct');
+    if (part.type === 'graph') state.grids[k].reveal({ fn: part.fn, correct: part.correct });
     box.querySelector('.fb').innerHTML = r.ok
       ? `<span class="mark-ok">✓ Correct</span>`
       : `<span class="mark-no">✗ Not quite.</span> ${r.msg ? `<span>${esc(r.msg)}</span> ` : ''}<span class="muted">Correct answer: ${answerTex(part)}</span>`;

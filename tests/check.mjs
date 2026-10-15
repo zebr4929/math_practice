@@ -162,4 +162,74 @@ console.log('problems', count, 'errors', errors);
   console.log('algebra II check: bad =', bad);
   errors += bad;
 }
+
+// ---------- graphing, forms, exponential end behavior ----------
+{
+  const { graphStandard, graphVertex } = await import('../js/skills/alg2/graphing.js' + v);
+  const { factoredFromGraph, toVertexForm } = await import('../js/skills/alg2/forms.js' + v);
+  const { skill: expEnd } = await import('../js/skills/precalc/exp-end-behavior.js' + v);
+  let bad = 0; const B = (m, p) => { bad++; if (bad < 12) console.log('FAIL', m, p && (p.prompt || '').slice(0, 160)); };
+  const aSeen = {};
+  for (const sk of [graphStandard, graphVertex]) for (const L of [1, 2, 3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = sk.generate(L, makeRng(seed * 17 + L));
+    const { a, h, k, correct, window, eq } = p._check; const part = p.parts[0];
+    aSeen[sk.id + L + ':' + a] = 1;
+    if (correct.length !== 7) B('7 pts', p);
+    if (!correct.some(q => q.x === h && q.y === k)) B('vertex', p);
+    for (const q of correct) {
+      if (Math.abs(a * (q.x - h) ** 2 + k - q.y) > 1e-9) B('pt on curve', p);
+      if (eq && Math.abs(eq[0] * q.x * q.x + eq[1] * q.x + eq[2] - q.y) > 1e-9) B('std eq', p);
+      if (q.x < window.xmin || q.x > window.xmax || q.y < window.ymin || q.y > window.ymax) B('window', p);
+      if (Math.abs(q.y / (part.snap || 1) - Math.round(q.y / (part.snap || 1))) > 1e-9) B('snap', p);
+    }
+    if (eq && !eq.slice(1).every(Number.isInteger)) B('std b, c whole', p);
+    if (!Number.isInteger(h) || !Number.isInteger(k)) B('integer vertex', p);
+    if (!part.check(correct.map(q => ({ ...q }))).ok) B('accept correct', p);
+    if (!part.check(correct.slice(1)).format) B('count msg', p);
+    const wrong = correct.map(q => ({ x: q.x, y: q.y + (q.x === h ? 0 : 1) }));
+    if (part.check(wrong).ok) B('accept wrong', p);
+    if (L === 1 && a !== 1) B('L1 a', p); if (L === 2 && Math.abs(a) !== 1) B('L2 a', p);
+    if (L === 3 && ![2, 0.5, 3].includes(Math.abs(a))) B('L3 a', p);
+  }
+  const frac = x => { const g = (p, q) => q ? g(q, p % q) : p; for (let d = 1; d <= 12; d++) { const n = Math.round(x * d); if (Math.abs(n / d - x) < 1e-9) return d === 1 ? String(n) : `${n}/${d}`; } return String(x); };
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = factoredFromGraph.generate(L, makeRng(seed * 23 + L));
+    const { a, r, s, pt, fn } = p._check; const part = p.parts[0];
+    if (Math.abs(fn(r)) > 1e-9 || Math.abs(fn(s)) > 1e-9) B('roots', p);
+    if (Math.abs(fn(pt.x) - pt.y) > 1e-9) B('labeled point', p);
+    const ans = `(${frac(a)})(x - (${r}))(x - (${s}))`;
+    if (!part.check(ans).ok) B('accept own ' + ans, p);
+    const expanded = `${frac(a)}*x^2 + ${frac(-a * (r + s))}*x + ${frac(a * r * s)}`;
+    const ex = part.check(expanded); if (ex.ok || !ex.msg) B('expanded must be flagged ' + expanded, p);
+    if (part.check(`(x - (${r}))(x - (${s}))`).ok && a !== 1) B('accepted missing a', p);
+    if (L === 1 && Math.abs(a) !== 1) B('L1', p); if (L === 2 && (!Number.isInteger(a) || Math.abs(a) < 2)) B('L2', p);
+    if (L === 3 && Number.isInteger(a)) B('L3', p);
+  }
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = toVertexForm.generate(L, makeRng(seed * 29 + L));
+    const { a, h, k, fn, std } = p._check; const part = p.parts[0];
+    for (const x of [-2, 0, 1.5, 3]) if (Math.abs(fn(x) - (std[0] * x * x + std[1] * x + std[2])) > 1e-9) B('vf math', p);
+    const ans = `${frac(a)}(x - (${frac(h)}))^2 + (${frac(k)})`;
+    if (!part.check(ans).ok) B('vf accept ' + ans, p);
+    if (!part.check(`(${frac(k)}) + ${frac(a)}(x - (${frac(h)}))^2`).ok) B('vf order', p);
+    const st = part.check(`${std[0]}x^2 + (${std[1]})x + (${std[2]})`); if (st.ok || !st.msg) B('vf standard flagged', p);
+    if (L === 1 && (a !== 1 || !Number.isInteger(h))) B('vf L1', p);
+    if (L === 2 && !(a === -1 || !Number.isInteger(h))) B('vf L2', p);
+    if (L === 3 && Math.abs(a) < 2) B('vf L3', p);
+  }
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = expEnd.generate(L, makeRng(seed * 31 + L));
+    const { a, k, left, right, fn } = p._check;
+    const num = (x, want) => want.inf ? Math.sign(fn(x)) === want.inf && Math.abs(fn(x)) > 1e3 : Math.abs(fn(x) - want.value) < 1e-3;
+    if (!num(-60, left) || !num(60, right)) B('limits', p);
+    const str = w => w.inf ? (w.inf > 0 ? '∞' : '-∞') : String(w.value);
+    if (!p.parts[0].check(str(left)).ok || !p.parts[1].check(str(right)).ok) B('accept limits', p);
+    if (p.parts[0].check(str(right)).ok && str(left) !== str(right)) B('swap accepted', p);
+    if (L === 2 && a < 0) B('L2 reflection', p); if (L === 3 && a > 0) B('L3 not reflected', p);
+    if (L === 1 && !p.displayGraph) B('L1 graph', p);
+  }
+  console.log('a values seen:', Object.keys(aSeen).sort().join(' '));
+  console.log('graph/forms/exp check: bad =', bad);
+  errors += bad;
+}
 console.log('total errors', errors);

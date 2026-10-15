@@ -1,11 +1,11 @@
 // Skill: Factoring quadratics (Algebra II)
-import { randInt, pick, nonzero, parse, evaluate, toTex, gcd } from '../../math.js?v=1.4';
+import { randInt, pick, nonzero, parse, evaluate, toTex, gcd } from '../../math.js?v=1.6';
 
 export const skill = {
   id: 'factoring',
   course: 'alg2',
   title: 'Factoring Quadratics',
-  group: 'Quadratics',
+  group: 'Quadratics: factoring and solving',
   blurb: 'Factor trinomials completely, including special products.',
   levels: {
     1: { name: 'Easy', desc: 'Leading coefficient 1, like x² + 5x + 6' },

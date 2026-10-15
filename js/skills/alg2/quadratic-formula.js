@@ -1,12 +1,12 @@
 // Skill: Simplifying the result of the quadratic formula (Algebra II)
 // Students simplify the radical first (including imaginary results), then reduce the fraction.
-import { randInt, pick, nonzero, gcd } from '../../math.js?v=1.4';
+import { randInt, pick, nonzero, gcd } from '../../math.js?v=1.6';
 
 export const skill = {
   id: 'quadratic-formula',
   course: 'alg2',
   title: 'Simplifying Quadratic Formula Answers',
-  group: 'Quadratics',
+  group: 'Quadratics: factoring and solving',
   blurb: 'Simplify the radical, then reduce the fraction. Includes imaginary answers.',
   levels: {
     1: { name: 'Easy', desc: 'Real answers where everything divides evenly' },
