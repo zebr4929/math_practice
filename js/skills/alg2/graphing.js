@@ -1,6 +1,6 @@
 // Skills: graphing quadratics from standard form and from vertex form (Algebra II).
 // Students plot 7 points: the vertex and 3 on each side, using the 1-3-5 pattern scaled by a.
-import { F, randInt, pick } from '../../math.js?v=1.6';
+import { F, randInt, pick } from '../../math.js?v=1.7';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'a = 1' },
@@ -10,7 +10,7 @@ const LEVELS = {
 
 export const graphStandard = {
   id: 'graph-standard',
-  course: 'alg2',
+  course: ['accel'],
   title: 'Graphing Quadratics from Standard Form',
   group: 'Quadratics: forms and graphs',
   blurb: 'Find the vertex, then plot 7 points with the 1-3-5 pattern.',
@@ -20,7 +20,7 @@ export const graphStandard = {
 
 export const graphVertex = {
   id: 'graph-vertex',
-  course: 'alg2',
+  course: ['accel'],
   title: 'Graphing Quadratics from Vertex Form',
   group: 'Quadratics: forms and graphs',
   blurb: 'Read the vertex, then plot 7 points with the 1-3-5 pattern.',

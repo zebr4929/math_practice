@@ -5,11 +5,11 @@ export const CONFIG = {
   sheetUrl: 'https://script.google.com/macros/s/AKfycbyHIyPoyCjd-Y4XQJchGQPoxcxKQrsBOWJXsa2NM6SDiujHyCT1Ahd5tjJpR0ZO4BOi/exec',
 
   // Courses on the sign-in screen. `skills` says which skill set the course sees
-  // (each skill file names its set: 'precalc' or 'alg2').
+  // (each skill file lists the sets it belongs to: 'precalc', 'accel', 'honors').
   courses: [
     { name: 'AP Precalculus', skills: 'precalc' },
-    { name: 'Accelerated Algebra II', skills: 'alg2' },
-    { name: 'Honors Algebra II', skills: 'alg2' },
+    { name: 'Accelerated Algebra II', skills: 'accel' },
+    { name: 'Honors Algebra II', skills: 'honors' },
   ],
 
   // Dropdowns on the sign-in screen. Edit these lists to match your classes.
@@ -18,5 +18,5 @@ export const CONFIG = {
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '1.6',
+  version: '1.7',
 };

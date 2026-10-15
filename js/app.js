@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=1.6';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.6';
-import { CONFIG } from './config.js?v=1.6';
-import { makeGrid } from './graph.js?v=1.6';
+import { SKILLS, byId } from './skills/index.js?v=1.7';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=1.7';
+import { CONFIG } from './config.js?v=1.7';
+import { makeGrid } from './graph.js?v=1.7';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -17,7 +17,7 @@ let student = store.get('pp.student');
 if (student && (CONFIG.teachers || []).length && !student.teacher) student = null;
 if (student && !(CONFIG.courses || []).some(c => c.name === student.course)) student = null;
 const courseOf = s => (CONFIG.courses || []).find(c => c.name === s?.course);
-const mySkills = () => SKILLS.filter(sk => sk.course === courseOf(student)?.skills);
+const mySkills = () => SKILLS.filter(sk => [].concat(sk.course).includes(courseOf(student)?.skills));
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

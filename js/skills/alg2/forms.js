@@ -1,5 +1,5 @@
 // Skills: writing factored form from a graph, and converting standard form to vertex form (Algebra II).
-import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=1.6';
+import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=1.7';
 
 // ---------- shared helpers ----------
 const clean = s => String(s).replace(/[−–]/g, '-').replace(/^\s*(y|f\s*\(\s*x\s*\))\s*=\s*/i, '').trim();
@@ -32,7 +32,7 @@ const linTex = r => (r === 0 ? 'x' : `(x ${r > 0 ? '-' : '+'} ${Math.abs(r)})`);
 // ================= Factored form from a graph =================
 export const factoredFromGraph = {
   id: 'factored-from-graph',
-  course: 'alg2',
+  course: ['accel'],
   title: 'Writing Factored Form from a Graph',
   group: 'Quadratics: forms and graphs',
   blurb: 'Use the x-intercepts and one more point to write y = a(x - r)(x - s).',
@@ -117,7 +117,7 @@ function buildFactored(level, rng) {
 // ================= Standard form to vertex form =================
 export const toVertexForm = {
   id: 'vertex-form',
-  course: 'alg2',
+  course: ['accel'],
   title: 'Converting Standard Form to Vertex Form',
   group: 'Quadratics: forms and graphs',
   blurb: 'Complete the square to rewrite y = ax² + bx + c as y = a(x - h)² + k.',
