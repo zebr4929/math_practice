@@ -25,7 +25,7 @@ for (const s of SKILLS) for (const L of [1,2,3]) {
       if (part.type === 'mc') { if (!(part.answer >= 0 && part.answer < part.choices.length)) fail('mc idx', p); }
       if (part.type === 'rule') {
         // the rule printed in the solution must pass the checker
-        const m = p.solution.match(/simplifies to \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Rule: \$[a-z]_n = ([^$]+)\$/);
+        const m = p.solution.match(/simplifies to \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Rule: \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Model: \$[A-Z]\(n\) = ([^$]+)\$/);
         const tex = m[1].replace(/\\left\(/g,'(').replace(/\\right\)/g,')').replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)').replace(/\^\{([^}]*)\}/g,'^($1)');
         if (!checkRule(tex, part.truth).ok) fail('rule self-check: ' + tex, p);
       }
@@ -277,5 +277,54 @@ console.log('problems', count, 'errors', errors);
   console.log(JSON.stringify(tags));
   console.log('solving check: bad =', bad);
   errors += bad;
+}
+// Exponential models and y = ab^x rewriting
+{
+  const M = await import('../js/skills/precalc/exp-models.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 10) console.log('EXP FAIL', m, p?.prompt?.slice(0, 200)); };
+  // seasons
+  const sz = (y, mo, d) => M.seasonFor(new Date(y, mo - 1, d));
+  if (sz(2026,10,1)!=='halloween'||sz(2026,10,31)!=='halloween'||sz(2026,11,1)!=='holiday'||sz(2026,12,31)!=='holiday'||sz(2027,1,1)!=='holiday'||sz(2027,1,2)!=='school'||sz(2026,9,30)!=='school') B('season boundaries');
+  for (const [date, season] of [[new Date(2026,9,17),'halloween'],[new Date(2026,10,20),'holiday'],[new Date(2027,2,3),'school']]) {
+    M.expModels.now = () => date;
+    for (const L of [1,2,3]) for (let seed = 1; seed <= 1500; seed++) {
+      const p = M.expModels.generate(L, makeRng(seed * 13 + L));
+      const c = p._check;
+      if (c.season !== season) B('season', p);
+      if (/log|when will|how long/i.test(p.prompt)) B('log question', p);
+      // given points in the prompt satisfy the model; all values whole numbers through N
+      for (const m of p.prompt.matchAll(/[A-Z]\((\d+)\) = ([\d{},]+)\$/g)) { const val = +m[2].replace(/[{},]/g, ''); if (Math.abs(c.truth(+m[1]) - val) > 1e-6) B('given point', p); }
+      for (let n = 0; n <= c.N; n++) if (Math.abs(c.truth(n) - Math.round(c.truth(n))) > 1e-9) B('non-integer term', p);
+      if (L === 2 && (c.r % 1 !== 0 || c.r < 2)) B('L2 ratio', p);
+      if (L === 3 && c.r % 1 === 0) B('L3 ratio', p);
+      if (L > 1 && c.k - c.j < 2) B('gap', p);
+      const rule = p.parts.find(x => x.type === 'rule');
+      if (!checkRule(`${c.a0}(${c.r})^n`, rule.truth).ok && c.r % 1 === 0) B('rule', p);
+      if (L > 1 && !checkRule(`${Math.round(c.truth(c.j))}(${new Frac(...frac(c.r)).text()})^(n-${c.j})`, rule.truth).ok) B('shifted form', p);
+      if (checkRule(`${c.a0}(${c.r})^(n-1)`, rule.truth).ok) B('off-by-one accepted', p);
+    }
+  }
+  function frac(x) { for (let d = 1; d < 2000; d++) if (Math.abs(x*d - Math.round(x*d)) < 1e-9) return [Math.round(x*d), d]; }
+  const tagsR = {};
+  for (const L of [1,2,3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = M.expRewrite.generate(L, makeRng(seed * 17 + L));
+    tagsR[L + ' ' + p.tag] = (tagsR[L + ' ' + p.tag] || 0) + 1;
+    const { A, B: b } = p._check, chk = p.parts[0].check;
+    const [an, ad] = frac(A), [bn, bd] = frac(b);
+    const aStr = ad === 1 ? `${an}` : `(${an}/${ad})`, bStr = bd === 1 ? `${bn}` : `(${bn}/${bd})`;
+    if (Math.abs(A) > 600 || ad > 400) B('a size', p);
+    if (!chk(`${aStr}(${bStr})^x`).ok) B('own answer ' + aStr + bStr, p);
+    if (!chk(`y = ${aStr}*${bStr}^x`).ok) B('y= form', p);
+    if (!chk(`${bStr}^x * ${aStr}`).ok) B('reversed order', p);
+    if (Number.isFinite(+(A.toFixed(6))) && ad && [1,2,4,5,8,10,16,20,25,40,50,100,125].includes(ad) && !chk(`${A}(${bd === 1 ? bn : b})^x`).ok && (bd === 1 || [2,4,5,10].includes(bd))) B('decimal a', p);
+    // the original (unrewritten) expression must be rejected with a message
+    const given = p.prompt.match(/y = ([^$]+)\$/)[1].replace(/\\frac\{x\}\{(\d+)\}/g, 'x/$1').replace(/\^\{([^}]*)\}/g, '^($1)');
+    const r0 = chk(given); if (r0.ok || !r0.msg) B('given accepted: ' + given, p);
+    if (chk(`${aStr}(${bStr})^(x+1)`).ok) B('wrong accepted', p);
+    if (chk(`${aStr}*1*(${bStr})^x`).ok) B('uncombined accepted', p);
+    if (/em|—/.test(p.prompt) && /—/.test(p.prompt)) B('dash', p);
+  }
+  console.log(JSON.stringify(tagsR));
+  console.log('exp check: bad =', bad); errors += bad;
 }
 console.log('total errors', errors);

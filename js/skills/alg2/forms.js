@@ -1,5 +1,5 @@
 // Skills: writing factored form from a graph, and converting standard form to vertex form (Algebra II).
-import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=1.7';
+import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=1.8';
 
 // ---------- shared helpers ----------
 const clean = s => String(s).replace(/[−–]/g, '-').replace(/^\s*(y|f\s*\(\s*x\s*\))\s*=\s*/i, '').trim();

@@ -13,6 +13,8 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | Arithmetic Sequences | Rule from first terms | Rule from d and one term | Rule from two terms |
 | AP Precalculus | Geometric Sequences | Rule from first terms | Rule from r and one term | Rule from two terms |
 | AP Precalculus | End Behavior of Exponential Functions | From a graph | From the equation, no reflection | Reflected over the asymptote |
+| AP Precalculus | Exponential Models from Geometric Sequences | Starting value and rate in words | Two data points, whole-number ratio | Two data points, fractional ratio |
+| AP Precalculus | Rewriting Exponentials in y = abˣ Form | One shift in the exponent | Coefficient on x or fractional exponent | Shifts with coefficients, negative exponents |
 | Accelerated + Honors | Factoring Quadratics | a = 1 | a prime, plus special products | a not prime |
 | Accelerated + Honors | Solving by Factoring | a = 1 | Prime a, special products, terms on both sides | Composite a, rearranging |
 | Accelerated (imaginary) / Honors (real only) | Solving by Completing the Square | Even b | Odd b, constant on the right | Divide out a |
@@ -37,3 +39,5 @@ Setup instructions are in [SETUP.md](SETUP.md).
 - `tests/check.mjs`: run `node tests/check.mjs` to test every skill's answers
 - `tools/set_version.py`: stamps a version on files so browsers load updates right away
 - `vendor/katex/`: math rendering (KaTeX, MIT license)
+
+Seasonal word problems: the exponential models skill picks its stories by date. October uses Halloween stories, November 1 through January 1 uses Thanksgiving and Christmas stories, and the rest of the year uses school-life stories. The story lists are at the top of `js/skills/precalc/exp-models.js`.
