@@ -1,5 +1,5 @@
 // Skills: arithmetic and geometric sequence rules (Lesson 2.1)
-import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=1.8';
+import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=1.9';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'Write the rule from the first few terms' },
@@ -197,4 +197,106 @@ function geom(level, rng) {
     solution: `${given}<br>Rule: $${geomRuleTex('g', g1, r)}$ (any equivalent form is correct).<br>`
       + `$g_{${N}} = ${g1.tex()}\\left(${r.tex()}\\right)^{${N - 1}} = ${gN.tex()}$${!gN.isInt() && gN.terminatingDecimal() ? ` $= ${gN.terminatingDecimal()}$` : ''}.`,
   };
+}
+
+// ---------- equivalent forms of a geometric rule ----------
+// Any term can anchor the rule: g_n = g_k · r^(n - k). Students pick the rule that matches.
+export const geometricForms = {
+  id: 'geometric-forms',
+  title: 'Equivalent Forms of Geometric Rules',
+  course: 'precalc',
+  group: 'Unit 2: Sequences',
+  blurb: 'Recognize geometric rules written from different starting terms, like 4(1/2)^(n - 2) = 8(1/2)^(n - 1).',
+  levels: {
+    1: { name: 'Easy', desc: 'Pick the rule equivalent to a given rule' },
+    2: { name: 'Medium', desc: 'Match terms in a list, table or graph to a rule written from a different term' },
+    3: { name: 'Challenging', desc: 'Same as Medium, with negative ratios and ratios like 2/3' },
+  },
+  generate(level, rng) {
+    for (let t = 0; t < 300; t++) { const p = geomForms(level, rng); if (p) return p; }
+    throw new Error('geometric-forms: could not build');
+  },
+};
+
+// exponent n - k, written n, n - 2, n + 1
+const expoTex = k => (k === 0 ? 'n' : k > 0 ? `n - ${k}` : `n + ${-k}`);
+const coefOf = c => (c.eq(1) ? '' : c.eq(-1) ? '-' : c.tex());
+const formTex = (c, r, k) => `g_n = ${coefOf(c)}\\left(${r.tex()}\\right)^{${expoTex(k)}}`;
+
+function geomForms(level, rng) {
+  const R = level === 1 ? [F(2), F(3), F(4), F(1, 2), F(1, 3)]
+    : level === 2 ? [F(2), F(3), F(4), F(5), F(1, 2), F(1, 3), F(1, 4)]
+    : [F(-2), F(-3), F(-1, 2), F(-1, 3), F(2, 3), F(3, 2), F(3, 4), F(4, 3), F(-2, 3)];
+  const r = pick(rng, R);
+  const m = level === 3 ? nonzero(rng, -4, 4) : randInt(rng, 1, 5);
+  const g1 = F(m * Math.pow(r.d, 3));
+  const g = k => g1.mul(r.pow(k - 1));                     // g_k for any integer k (k = 0 allowed)
+  const val = (c, rr, k, n) => c.mul(rr.pow(n - k));        // value of a form at n
+  const sameAsTrue = (c, rr, k) => [1, 2, 3, 4].every(n => val(c, rr, k, n).eq(g(n)));
+  const terms = [1, 2, 3, 4].map(g);
+  if (terms.some(t => Math.abs(t.n) > 999 || t.d > 1)) return null;
+
+  // the correct rule is anchored at a term other than g_1
+  const kStar = pick(rng, level === 1 ? [0, 2, 3] : [0, 2, 3, 2, 3, 4, -1]);
+  const correct = [g(kStar), r, kStar];
+  if (Math.abs(correct[0].n) > 999 || correct[0].d > 99) return null;
+
+  const cands = [
+    [g(kStar), r, kStar + 1], [g(kStar), r, kStar - 1],           // right coefficient, wrong shift
+    [g1, r, kStar],                                                 // first term with the new shift
+    [g(kStar), r, -kStar],                                          // sign error in the shift
+    [g(kStar + 1), r, kStar], [g(kStar - 1), r, kStar],             // neighbor term as the coefficient
+    [g(kStar), F(r.d, r.n), kStar],                                 // ratio flipped
+    [g(kStar).neg(), r, kStar],
+  ];
+  const seen = new Set([formTex(...correct)]);
+  const wrong = [];
+  for (const c of shuffleArr(rng, cands)) {
+    if (wrong.length === 3) break;
+    if (Math.abs(c[0].n) > 999 || c[0].d > 99) continue;
+    if (c[0].sign() !== correct[0].sign() && level < 3) continue;   // keep the sign trap for Challenging
+    if (sameAsTrue(...c)) continue;
+    const t = formTex(...c);
+    if (seen.has(t)) continue;
+    seen.add(t); wrong.push(c);
+  }
+  if (wrong.length < 3) return null;
+  const opts = shuffleArr(rng, [correct, ...wrong]);
+  const answer = opts.indexOf(correct);
+  const choices = opts.map(o => `$${formTex(...o)}$`);
+
+  let prompt, visual = '';
+  if (level === 1) {
+    prompt = `A geometric sequence has the rule $${formTex(g1, r, 1)}$. Which of the following is also a rule for this sequence?`;
+  } else {
+    const s = showTerms(rng, 'g', terms, terms.every(t => Math.abs(t.value()) <= 30) && Math.max(...terms.map(t => Math.abs(t.value()))) >= 4);
+    prompt = `Let $g_n$ be a geometric sequence. ${s.text} Which of the following is an expression for the $n$th term?`;
+    visual = s.visual;
+  }
+
+  const steps = [];
+  if (level === 1) steps.push(`From the rule, $g_1 = ${g1.tex()}$ and $r = ${r.tex()}$.`);
+  else steps.push(`The first term is $g_1 = ${g1.tex()}$ and the common ratio is $r = \\dfrac{${terms[1].tex()}}{${terms[0].tex()}} = ${r.tex()}$, so one rule is $${formTex(g1, r, 1)}$.`);
+  steps.push(`A geometric rule can start from any term: $g_n = g_k \\cdot r^{\\,n - k}$. The exponent tells you which term the coefficient is.`);
+  steps.push(kStar === 0
+    ? `With exponent $n$, the coefficient must be $g_0$, one step before $g_1$: $g_0 = ${g1.tex()} \\div ${paren(r)} = ${g(0).tex()}$. So $${formTex(...correct)}$ works.`
+    : kStar < 0
+      ? `With exponent $n + ${-kStar}$, the coefficient must be $g_{${kStar}}$, which is ${1 - kStar} steps before $g_1$: $g_{${kStar}} = ${g(kStar).tex()}$. So $${formTex(...correct)}$ works.`
+      : `With exponent $n - ${kStar}$, the coefficient must be $g_{${kStar}} = ${g(kStar).tex()}$. So $${formTex(...correct)}$ works.`);
+  steps.push(`Quick check: put $n = 1$ and $n = 2$ into each choice. Only the correct rule gives both $g_1 = ${g1.tex()}$ and $g_2 = ${g(2).tex()}$:<br>`
+    + opts.map(o => `$${formTex(...o)}$ gives $${val(o[0], o[1], o[2], 1).tex()},\\ ${val(o[0], o[1], o[2], 2).tex()}$`).join('<br>'));
+
+  return {
+    tag: level === 1 ? 'rewrite a given rule' : `match terms, ${level === 3 ? 'negative or fractional ratio' : 'whole or unit-fraction ratio'}`,
+    prompt, visual,
+    parts: [{ type: 'mc', label: 'Choose one:', choices, answer }],
+    solution: steps.join('<br>'),
+    _check: { g1: g1.value(), r: r.value(), kStar, opts: opts.map(o => [o[0].value(), o[1].value(), o[2]]), answer },
+  };
+}
+
+function shuffleArr(rng, arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
 }

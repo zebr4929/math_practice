@@ -14,7 +14,9 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | Geometric Sequences | Rule from first terms | Rule from r and one term | Rule from two terms |
 | AP Precalculus | End Behavior of Exponential Functions | From a graph | From the equation, no reflection | Reflected over the asymptote |
 | AP Precalculus | Exponential Models from Geometric Sequences | Starting value and rate in words | Two data points, whole-number ratio | Two data points, fractional ratio |
-| AP Precalculus | Rewriting Exponentials in y = abˣ Form | One shift in the exponent | Coefficient on x or fractional exponent | Shifts with coefficients, negative exponents |
+| AP Precalculus | Rewriting Exponentials in y = abˣ Form (a can be a fraction or negative) | One shift in the exponent | Coefficient on x or fractional exponent | Shifts with coefficients, negative exponents |
+| AP Precalculus | Equivalent Forms of Geometric Rules | Pick the rule equivalent to a given rule | Match terms to a rule written from a different term | Same, with negative or fractional ratios |
+| AP Precalculus | Increasing, Decreasing and Concavity of Exponentials | From a table, positive outputs | From y = abˣ, a positive or negative | Tables with negative outputs, equations with shifts |
 | Accelerated + Honors | Factoring Quadratics | a = 1 | a prime, plus special products | a not prime |
 | Accelerated + Honors | Solving by Factoring | a = 1 | Prime a, special products, terms on both sides | Composite a, rearranging |
 | Accelerated (imaginary) / Honors (real only) | Solving by Completing the Square | Even b | Odd b, constant on the right | Divide out a |

@@ -318,7 +318,7 @@ console.log('problems', count, 'errors', errors);
     if (!chk(`${bStr}^x * ${aStr}`).ok) B('reversed order', p);
     if (Number.isFinite(+(A.toFixed(6))) && ad && [1,2,4,5,8,10,16,20,25,40,50,100,125].includes(ad) && !chk(`${A}(${bd === 1 ? bn : b})^x`).ok && (bd === 1 || [2,4,5,10].includes(bd))) B('decimal a', p);
     // the original (unrewritten) expression must be rejected with a message
-    const given = p.prompt.match(/y = ([^$]+)\$/)[1].replace(/\\frac\{x\}\{(\d+)\}/g, 'x/$1').replace(/\^\{([^}]*)\}/g, '^($1)');
+    const given = p.prompt.match(/y = ([^$]+)\$/)[1].replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1/$2)').replace(/\^\{([^}]*)\}/g, '^($1)');
     const r0 = chk(given); if (r0.ok || !r0.msg) B('given accepted: ' + given, p);
     if (chk(`${aStr}(${bStr})^(x+1)`).ok) B('wrong accepted', p);
     if (chk(`${aStr}*1*(${bStr})^x`).ok) B('uncombined accepted', p);
@@ -326,5 +326,36 @@ console.log('problems', count, 'errors', errors);
   }
   console.log(JSON.stringify(tagsR));
   console.log('exp check: bad =', bad); errors += bad;
+}
+// Equivalent geometric forms and increasing/concavity
+{
+  const { geometricForms } = await import('../js/skills/precalc/sequences.js' + v);
+  const { skill: beh } = await import('../js/skills/precalc/exp-behavior.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 10) console.log('FORMS FAIL', m, p?.prompt?.slice(0, 200)); };
+  for (const L of [1,2,3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = geometricForms.generate(L, makeRng(seed * 7919 + L * 53));
+    const { g1, r, opts, answer } = p._check;
+    const truth = n => g1 * Math.pow(r, n - 1);
+    const eqv = opts.map(([c, rr, k]) => [1,2,3,4,5].every(n => Math.abs(c * Math.pow(rr, n - k) - truth(n)) < 1e-9 * Math.max(1, Math.abs(truth(n)))));
+    if (!eqv[answer] || eqv.filter(Boolean).length !== 1) B('exactly one equivalent', p);
+    if (new Set(p.parts[0].choices).size !== 4) B('dup choices', p);
+    if (opts[answer][2] === 1) B('answer anchored at g1', p);
+    if (/NaN|undefined/.test(p.prompt + p.solution + p.parts[0].choices.join(''))) B('text', p);
+  }
+  for (const L of [1,2,3]) for (let seed = 1; seed <= 3000; seed++) {
+    const p = beh.generate(L, makeRng(seed * 7919 + L * 59));
+    const { sign, b } = p._check, f = x => sign * Math.pow(b, x);
+    const inc = f(1) > f(0), up = f(2) - 2 * f(1) + f(0) > 0;
+    if (p.parts[0].answer !== (inc ? 2 : 0) + (up ? 0 : 1)) B('behavior answer', p);
+    // table values must match the claimed direction and concavity
+    const m = p.visual && [...p.visual.matchAll(/<td>\$(-?)(?:\\frac\{(\d+)\}\{(\d+)\}|(\d+))\$<\/td>/g)].map(x => (x[1] ? -1 : 1) * (x[4] ? +x[4] : x[2] / x[3]));
+    if (m && m.length) {
+      if (m.length !== 4) B('table parse', p);
+      if ((m[1] > m[0]) !== inc) B('table direction', p);
+      if ((m[2] - 2 * m[1] + m[0] > 0) !== up) B('table concavity', p);
+    }
+    if (L === 1 && sign < 0) B('easy negative', p);
+  }
+  console.log('forms/behavior check: bad =', bad); errors += bad;
 }
 console.log('total errors', errors);

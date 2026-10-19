@@ -1,6 +1,6 @@
 // Skills: graphing quadratics from standard form and from vertex form (Algebra II).
 // Students plot 7 points: the vertex and 3 on each side, using the 1-3-5 pattern scaled by a.
-import { F, randInt, pick } from '../../math.js?v=1.8';
+import { F, randInt, pick } from '../../math.js?v=1.9';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'a = 1' },

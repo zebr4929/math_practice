@@ -1,7 +1,7 @@
 // AP Precalculus, Unit 2:
 //  1. Exponential models from geometric-sequence information, in seasonal word problems.
 //  2. Rewriting exponential functions in y = a·b^x form with exponent laws.
-import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=1.8';
+import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=1.9';
 
 // ================================================================
 // Seasonal contexts
@@ -141,9 +141,9 @@ export const expRewrite = {
   group: 'Unit 2: Exponential functions',
   blurb: 'Use exponent laws in reverse to rewrite the function as y = abˣ.',
   levels: {
-    1: { name: 'Easy', desc: 'One shift in the exponent, like y = 5(2)^(x + 3)' },
+    1: { name: 'Easy', desc: 'One shift in the exponent, like y = (1/3)(9)^(x - 2)' },
     2: { name: 'Medium', desc: 'A coefficient on x or a fractional exponent, like y = 4(9)^(x/2)' },
-    3: { name: 'Challenging', desc: 'Shifts and coefficients together, or negative exponents' },
+    3: { name: 'Challenging', desc: 'Shifts and coefficients together, or negative exponents, like y = -2(25)^(-x/2)' },
   },
   generate(level, rng) {
     for (let t = 0; t < 500; t++) { const p = buildRewrite(level, rng); if (p) return p; }
@@ -152,18 +152,20 @@ export const expRewrite = {
 };
 
 const pTex = f => (f.isInt() && f.n >= 0 ? String(f.n) : f.tex());                 // number inside parentheses
-const coefTex = a => (a.eq(1) ? '' : a.isInt() ? String(a.n) : a.tex());
+const coefTex = a => (a.eq(1) ? '' : a.eq(-1) ? '-' : a.tex());
+const aDot = a => (a.eq(1) ? '' : a.tex() + '\\cdot ');   // "a ·" in the worked solution
 const hTex = h => (h < 0 ? ` - ${-h}` : ` + ${h}`);
 
 function buildRewrite(level, rng) {
-  const a = F(pick(rng, level === 1 ? [1, 1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]));
+  // a: whole numbers, negatives and fractions, so students practice carrying them through
+  const a = pick(rng, [F(1), F(2), F(3), F(4), F(5), F(-1), F(-2), F(-3), F(-4), F(1, 2), F(1, 3), F(-1, 2), F(2, 3), F(-3, 4)]);
   let c, expoTex, A, B, laws, kind;
   const b = pick(rng, [2, 3, 4, 5, 10, 2, 3]);
   if (level === 1) {
     const h = pick(rng, [-3, -2, -1, 1, 2, 3]);
     c = b; expoTex = `x${hTex(h)}`; A = a.mul(F(b).pow(h)); B = F(b);
     laws = [`Split the exponent: $${b}^{x${hTex(h)}} = ${b}^{x}\\cdot ${b}^{${h}}$.`,
-      `$${b}^{${h}} = ${F(b).pow(h).tex()}$, so $a = ${a.eq(1) ? '' : a.tex() + '\\cdot '}${F(b).pow(h).tex()} = ${A.tex()}$.`];
+      `$${b}^{${h}} = ${F(b).pow(h).tex()}$, so $a = ${aDot(a)}${F(b).pow(h).tex()} = ${A.tex()}$.`];
     kind = h > 0 ? 'shift up in exponent' : 'shift down in exponent';
   } else if (level === 2) {
     if (rng() < 0.5) {                 // c^(x/k) with c = b^k
@@ -180,31 +182,38 @@ function buildRewrite(level, rng) {
       kind = 'coefficient on x';
     }
   } else {
-    const v = pick(rng, ['kx+h', 'x/k+h', 'h-x', 'h-x/k', 'kx+h']);
+    const v = pick(rng, ['kx+h', 'x/k+h', 'h-x', 'h-x/k', 'kx+h', '-x/k']);
     if (v === 'kx+h') {
       const k = pick(rng, [2, 3]), h = pick(rng, [-2, -1, 1, 2]); c = b;
       if (Math.pow(b, k) > 125) return null;
       expoTex = `${k}x${hTex(h)}`; A = a.mul(F(b).pow(h)); B = F(Math.pow(b, k));
       laws = [`Split the exponent: $${b}^{${k}x${hTex(h)}} = ${b}^{${k}x}\\cdot ${b}^{${h}} = \\left(${b}^{${k}}\\right)^{x}\\cdot ${b}^{${h}}$.`,
-        `$${b}^{${k}} = ${B.n}$ and $${b}^{${h}} = ${F(b).pow(h).tex()}$, so $a = ${a.eq(1) ? '' : a.tex() + '\\cdot '}${F(b).pow(h).tex()} = ${A.tex()}$.`];
+        `$${b}^{${k}} = ${B.n}$ and $${b}^{${h}} = ${F(b).pow(h).tex()}$, so $a = ${aDot(a)}${F(b).pow(h).tex()} = ${A.tex()}$.`];
       kind = 'coefficient and shift';
     } else if (v === 'x/k+h') {
       const base = pick(rng, [2, 3, 4]), k = pick(rng, [2, 3]), h = pick(rng, [-1, 1, 2]);
       c = Math.pow(base, k); expoTex = `\\frac{x}{${k}}${hTex(h)}`; A = a.mul(F(c).pow(h)); B = F(base);
       laws = [`Split the exponent: $${c}^{\\frac{x}{${k}}${hTex(h)}} = \\left(${c}^{\\frac{1}{${k}}}\\right)^{x}\\cdot ${c}^{${h}}$.`,
-        `$${c}^{\\frac{1}{${k}}} = ${base}$ and $${c}^{${h}} = ${F(c).pow(h).tex()}$, so $a = ${a.eq(1) ? '' : a.tex() + '\\cdot '}${F(c).pow(h).tex()} = ${A.tex()}$.`];
+        `$${c}^{\\frac{1}{${k}}} = ${base}$ and $${c}^{${h}} = ${F(c).pow(h).tex()}$, so $a = ${aDot(a)}${F(c).pow(h).tex()} = ${A.tex()}$.`];
       kind = 'fractional exponent and shift';
     } else if (v === 'h-x') {
       const h = pick(rng, [1, 2, 3]); c = b; if (b === 10 && h > 2) return null;
       expoTex = `${h} - x`; A = a.mul(F(b).pow(h)); B = F(1, b);
       laws = [`Split the exponent: $${b}^{${h} - x} = ${b}^{${h}}\\cdot ${b}^{-x} = ${b}^{${h}}\\cdot\\left(${b}^{-1}\\right)^{x}$.`,
-        `$${b}^{-1} = ${B.tex()}$ and $${b}^{${h}} = ${Math.pow(b, h)}$, so $a = ${a.eq(1) ? '' : a.tex() + '\\cdot '}${Math.pow(b, h)} = ${A.tex()}$.`];
+        `$${b}^{-1} = ${B.tex()}$ and $${b}^{${h}} = ${Math.pow(b, h)}$, so $a = ${aDot(a)}${Math.pow(b, h)} = ${A.tex()}$.`];
       kind = 'negative exponent';
+    } else if (v === '-x/k') {
+      const base = pick(rng, [2, 3, 4, 5]), k = pick(rng, [2, 2, 3]);
+      c = Math.pow(base, k); if (c > 125) return null;
+      expoTex = `-\\frac{1}{${k}}x`; A = a; B = F(1, base);
+      laws = [`Write the exponent as a product: $${c}^{-\\frac{1}{${k}}x} = \\left(${c}^{-\\frac{1}{${k}}}\\right)^{x}$.`,
+        `$${c}^{-\\frac{1}{${k}}} = \\dfrac{1}{${k === 2 ? `\\sqrt{${c}}` : `\\sqrt[${k}]{${c}}`}} = ${B.tex()}$, so the base is $${B.tex()}$ and $a$ stays $${a.tex()}$.`];
+      kind = 'negative fractional exponent';
     } else {
       const base = pick(rng, [2, 3]), k = 2, h = pick(rng, [1, 2]);
       c = Math.pow(base, k); expoTex = `${h} - \\frac{x}{${k}}`; A = a.mul(F(c).pow(h)); B = F(1, base);
       laws = [`Split the exponent: $${c}^{${h} - \\frac{x}{${k}}} = ${c}^{${h}}\\cdot\\left(${c}^{-\\frac{1}{${k}}}\\right)^{x}$.`,
-        `$${c}^{-\\frac{1}{${k}}} = \\dfrac{1}{\\sqrt{${c}}} = ${B.tex()}$ and $${c}^{${h}} = ${Math.pow(c, h)}$, so $a = ${a.eq(1) ? '' : a.tex() + '\\cdot '}${Math.pow(c, h)} = ${A.tex()}$.`];
+        `$${c}^{-\\frac{1}{${k}}} = \\dfrac{1}{\\sqrt{${c}}} = ${B.tex()}$ and $${c}^{${h}} = ${Math.pow(c, h)}$, so $a = ${aDot(a)}${Math.pow(c, h)} = ${A.tex()}$.`];
       kind = 'negative fractional exponent';
     }
   }
@@ -219,8 +228,8 @@ function buildRewrite(level, rng) {
     prompt: `Rewrite in the form $y = ab^x$: $\\;${givenTex}$<br>Write $a$ and $b$ as whole numbers or fractions, not decimals.`,
     parts: [{
       type: 'custom', label: '$y =$', check: rewriteChecker(target), preview: rewritePreview, keys: ['(', ')', '^', '/'],
-      placeholder: 'e.g. 40(2)^x', answerTex: `$${ansTex}$`,
-      help: 'Type the right side, like 40(2)^x or (1/9)(3)^x. Use fractions, not decimals.',
+      placeholder: 'e.g. -2(1/5)^x', answerTex: `$${ansTex}$`,
+      help: 'Type the right side, like 40(2)^x, (1/9)(3)^x or -2(1/5)^x. Use fractions, not decimals.',
     }],
     solution: [...laws, `So $${ansTex}$.`].join('<br>'),
     _check: { A: A.value(), B: B.value(), target },
@@ -237,7 +246,7 @@ function isNumberLiteral(n) {
   n = stripP(n);
   if (n.num !== undefined) return true;
   if (n.op === 'neg') return isNumberLiteral(n.a);
-  if (n.op === '/') return stripP(n.a).num !== undefined && stripP(n.b).num !== undefined;
+  if (n.op === '/') { const t = stripP(n.a), u = stripP(n.b); return (t.num !== undefined || (t.op === 'neg' && stripP(t.a).num !== undefined)) && u.num !== undefined; }
   return false;
 }
 
@@ -256,7 +265,7 @@ function rewriteChecker(target) {
     if (!same) return { ok: false };
     // structure: [number] · (number)^x   (a may be omitted when it is 1)
     const factors = [];
-    (function flat(n) { n = stripP(n); if (n.op === '*') { flat(n.a); flat(n.b); } else factors.push(n); })(tree);
+    (function flat(n) { n = stripP(n); if (n.op === '*') { flat(n.a); flat(n.b); } else if (n.op === 'neg' && hasX(n.a)) { factors.push({ num: '-1' }); flat(n.a); } else factors.push(n); })(tree);
     const pow = factors.filter(hasX), consts = factors.filter(n => !hasX(n));
     const notForm = { ok: false, msg: 'That is equal, but it is not in the form y = ab^x yet. The exponent should be just x, with one number in front and one number as the base.' };
     if (pow.length !== 1 || consts.length > 1) return notForm;

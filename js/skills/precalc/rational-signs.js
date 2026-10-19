@@ -2,7 +2,7 @@
 // Every function has equal degree on top and bottom (so the HA is a ratio of leading
 // coefficients) and exactly one hole. Negatives appear out front, in constants, and in
 // "backwards" factors like (2 - 3x).
-import { F, Frac, randInt, pick, nonzero, paren } from '../../math.js?v=1.8';
+import { F, Frac, randInt, pick, nonzero, paren } from '../../math.js?v=1.9';
 
 export const skill = {
   id: 'rational-signs',
