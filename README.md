@@ -26,7 +26,11 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | Accelerated | Graphing from Standard Form (click 7 points) | a = 1 | a = ±1 | a = ±2, ±1/2, ±3 |
 | Accelerated | Graphing from Vertex Form (click 7 points) | a = 1 | a = ±1 | a = ±2, ±1/2, ±3 |
 | Accelerated | Writing Factored Form from a Graph | a = ±1 | Whole-number a | Fractional a |
-| Accelerated | Converting Standard Form to Vertex Form | a = 1, even b | a = -1 or odd b | Factor out a first |
+| Accelerated | Writing Factored Form from a Table or Points | Table, a = ±1 | Three points, whole-number a | Word-problem tables (seasonal), or a fractional zero |
+| Accelerated | Converting Standard Form to Vertex Form (also asks for the vertex) | a = 1, even b | a = -1 or odd b | Factor out a first |
+| Accelerated | Converting Vertex Form to Standard Form | a = 1 | Whole-number a | Fractional a |
+| Accelerated | Maximum or Minimum Value | From vertex form | Standard form, whole numbers | Standard form, fractions |
+| Accelerated | Domain and Range of Quadratics | From vertex form | Standard form, whole numbers | Standard form, fractions |
 
 ## Files
 

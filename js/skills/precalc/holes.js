@@ -1,5 +1,5 @@
 // Skill: Holes vs. zeros vs. vertical asymptotes in factored rational functions
-import { F, Frac, randInt, pick, nonzero, shuffle, distinctInts, factorTex, paren } from '../../math.js?v=1.9';
+import { F, Frac, randInt, pick, nonzero, shuffle, distinctInts, factorTex, paren } from '../../math.js?v=2.0';
 
 export const skill = {
   id: 'holes',

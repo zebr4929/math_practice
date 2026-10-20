@@ -358,4 +358,49 @@ console.log('problems', count, 'errors', errors);
   }
   console.log('forms/behavior check: bad =', bad); errors += bad;
 }
+// Accelerated Algebra II: forms, max/min, domain and range
+{
+  const Fm = await import('../js/skills/alg2/forms.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 12) console.log('QUAD FAIL', m, p?.prompt?.slice(0, 160)); };
+  const typed = tex => tex.split('$')[1].replace(/^y = /, '').replace(/\\left\(/g, '(').replace(/\\right\)/g, ')')
+    .replace(/\\t?frac\{(\d+)\}\{(\d+)\}/g, '($1/$2)').replace(/\\cdot/g, '*').replace(/\{|\}/g, '');
+  for (const L of [1,2,3]) for (let seed = 1; seed <= 2000; seed++) {
+    for (const sk of [Fm.factoredFromData, Fm.vertexToStandard, Fm.toVertexForm]) {
+      const p = sk.generate(L, makeRng(seed * 7919 + L * 61 + sk.id.length));
+      const part = p.parts[0], own = typed(part.answerTex);
+      const r = part.check(own); if (!r.ok) B(sk.id + ' own answer ' + own + ' ' + JSON.stringify(r), p);
+      if (sk === Fm.factoredFromData) {
+        if (part.check('0').ok) B('zero accepted', p);
+        if (p.visual) for (const m of p.visual.matchAll(/<tr><td>(-?\d+)<\/td><td>(-?\d+)<\/td><\/tr>/g)) if (Math.abs(p._check.fn(+m[1]) - +m[2]) > 1e-9) B('story table value', p);
+        if (p.parts[0].answerTex.includes(', or $')) { const alt = typed('$' + part.answerTex.split('$')[3] + '$'); if (!part.check(alt).ok) B('alt form ' + alt, p); }
+      }
+      if (sk === Fm.vertexToStandard) {
+        const given = typed('$' + p.prompt.split('$')[1].replace(/^\;/, '') + '$').replace(/\^2/g, '^2');
+        const g = part.check(given); if (g.ok || !g.msg) B('vertex form accepted as standard: ' + given, p);
+        const [A, Bc, C] = p._check.std; if ([0, 1, -2, 3].some(x => Math.abs(A*x*x + Bc*x + C - p._check.fn(x)) > 1e-9)) B('std coefficients', p);
+      }
+      if (sk === Fm.toVertexForm && !checkPoint(`(${p._check.h}, ${p._check.k})`, p.parts[1].answer).ok) B('vertex point', p);
+    }
+    const mm = Fm.maxMin.generate(L, makeRng(seed * 7919 + L * 67));
+    { const { fn, a, h, k } = mm._check; if (Math.abs(fn(h) - k) > 1e-9 || (a > 0) !== (fn(h + 1) > k)) B('maxmin value', mm);
+      if (mm.parts[0].answer !== (a > 0 ? 1 : 0)) B('maxmin choice', mm);
+      if (L === 3 && Number.isInteger(k)) B('L3 integer k', mm);
+      if (/minimum value is|maximum value is/i.test(mm.parts[1].label)) B('label gives it away', mm); }
+    const dr = Fm.domainRange.generate(L, makeRng(seed * 7919 + L * 71));
+    { const { k, up } = dr._check, c = dr.parts[1].check, kk = new Frac(...(Number.isInteger(k) ? [k, 1] : [Math.round(k * 4), 4])).text();
+      const yes = [`y ${up ? '>=' : '<='} ${kk}`, `y${up ? '≥' : '≤'}${kk}`, `${kk} ${up ? '<=' : '>='} y`, up ? `[${kk}, ∞)` : `(-∞, ${kk}]`, up ? `[${kk},inf)` : `(-inf,${kk}]`];
+      const no = [`y ${up ? '<=' : '>='} ${kk}`, `y ${up ? '>' : '<'} ${kk}`, `y ${up ? '>=' : '<='} ${k + 1}`, 'all real numbers', up ? `(${kk}, ∞)` : `(-∞, ${kk})`];
+      for (const t of yes) if (!c(t).ok) B('range rejected ' + t, dr);
+      for (const t of no) if (c(t).ok) B('range accepted ' + t, dr);
+      if (!c(`y < ${kk}`).msg && !up) B('strict msg', dr);
+      if (dr.parts[0].choices[dr.parts[0].answer] !== 'All real numbers') B('domain', dr);
+      if (new Set(dr.parts[0].choices).size !== 4) B('domain dup', dr); }
+  }
+  // seasons for the story tables
+  for (const [d, word] of [[new Date(2026, 9, 20), /pumpkin|jack|witch|zombie/i], [new Date(2026, 10, 20), /Thanksgiving|snowball|reindeer|turkey/i], [new Date(2027, 2, 1), /P\.E\.|fountain|robotics|frog/i]]) {
+    Fm.factoredFromData.now = () => d;
+    for (let seed = 1; seed <= 300; seed++) { const p = Fm.factoredFromData.generate(3, makeRng(seed * 7919 + 3)); if (p.tag === 'word problem table' && !word.test(p.prompt)) B('season story', p); }
+  }
+  console.log('quadratics check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);
