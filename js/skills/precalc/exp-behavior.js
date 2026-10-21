@@ -1,6 +1,6 @@
 // AP Precalculus, Unit 2: increasing/decreasing and concavity of exponential functions,
 // from a table of values or from the equation.
-import { F, randInt, pick } from '../../math.js?v=2.0';
+import { F, randInt, pick } from '../../math.js?v=2.1';
 
 export const skill = {
   id: 'exp-behavior',

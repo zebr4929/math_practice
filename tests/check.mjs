@@ -25,8 +25,8 @@ for (const s of SKILLS) for (const L of [1,2,3]) {
       if (part.type === 'mc') { if (!(part.answer >= 0 && part.answer < part.choices.length)) fail('mc idx', p); }
       if (part.type === 'rule') {
         // the rule printed in the solution must pass the checker
-        const m = p.solution.match(/simplifies to \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Rule: \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Model: \$[A-Z]\(n\) = ([^$]+)\$/);
-        const tex = m[1].replace(/\\left\(/g,'(').replace(/\\right\)/g,')').replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)').replace(/\^\{([^}]*)\}/g,'^($1)');
+        const m = p.solution.match(/simplifies to \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Rule: \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/term you know[^$]*\$[^$]*\$[^$]*\$[A-Z]\(n\) = ([^$]+)\$/) || p.solution.match(/the term you know: \$[A-Z]\(n\) = ([^$]+)\$/);
+        const tex = m[1].replace(/\{,\}/g, '').replace(/\\left\(/g,'(').replace(/\\right\)/g,')').replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)').replace(/\^\{([^}]*)\}/g,'^($1)');
         if (!checkRule(tex, part.truth).ok) fail('rule self-check: ' + tex, p);
       }
     }

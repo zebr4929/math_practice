@@ -1,7 +1,7 @@
 // AP Precalculus, Unit 2:
 //  1. Exponential models from geometric-sequence information, in seasonal word problems.
 //  2. Rewriting exponential functions in y = a·b^x form with exponent laws.
-import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.0';
+import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.1';
 
 // ================================================================
 // Seasonal contexts
@@ -52,7 +52,7 @@ const plural = (u, n) => (n === 1 ? u : u + 's');
 const rPhrase = r => ({ 2: 'doubles', 3: 'triples', 4: 'quadruples' }[r.text()] ||
   (r.n === 1 ? `drops to ${{ 2: 'half', 3: 'one third', 4: 'one fourth' }[r.d]} of what it was` : `is multiplied by ${r.text()}`));
 
-const RULE_HELP = 'Type the right side only, like 3(2)^n. Use fractions, not decimals: (1/2)^n.';
+const RULE_HELP = 'Type the right side only, like 12(2)^(n - 2). Use fractions, not decimals: (1/2)^n.';
 const ruleTex = (a, r) => `${a.eq(1) ? '' : a.tex()}\\left(${r.tex()}\\right)^{n}`;
 
 export const expModels = {
@@ -60,9 +60,9 @@ export const expModels = {
   course: 'precalc',
   title: 'Exponential Models from Geometric Sequences',
   group: 'Unit 2: Exponential functions',
-  blurb: 'Find the common ratio and initial value from the story, write the model, then use it.',
+  blurb: 'Find the common ratio from the story, write the model from a term you know, then use it.',
   levels: {
-    1: { name: 'Easy', desc: 'Starting value and growth or decay rate given in words' },
+    1: { name: 'Easy', desc: 'One value and the growth or decay rate given in words' },
     2: { name: 'Medium', desc: 'Two data points, whole-number ratio' },
     3: { name: 'Challenging', desc: 'Two data points, fractional ratio (decay or slower growth)' },
   },
@@ -100,34 +100,42 @@ function buildModel(level, rng, date) {
   const truth = n => a0.value() * Math.pow(r.value(), n);
   let prompt, parts = [], steps = [];
 
+  // the model is written from a term the student knows: f(n) = f(m) r^(n - m)
+  const anchorTex = (m, v) => `${v.eq(1) ? '' : v.isInt() ? fmtT(v) : v.tex()}\\left(${r.tex()}\\right)^{${m === 0 ? 'n' : `n - ${m}`}}`;
+  let m;                                                   // the anchor term used in the worked solution
   if (level === 1) {
-    prompt = `${ctx.story} At the start there are ${fmt(a0)} ${ctx.what}, and that number ${rPhrase(r)} every ${ctx.unit}. `
-      + `Let $${unitN}$ be the number of ${ctx.what} after $n$ ${plural(ctx.unit, 2)}.`;
-    parts.push({ type: 'rule', label: `$${unitN} =$`, truth, var: 'n', placeholder: 'e.g. 3(2)^n', help: RULE_HELP, answerTex: `$${ruleTex(a0, r)}$` });
+    m = rng() < 0.5 ? 0 : randInt(rng, 1, Math.min(3, N - 2));
+    const am = term(m);
+    prompt = m === 0
+      ? `${ctx.story} At the start there are ${fmt(am)} ${ctx.what}, and that number ${rPhrase(r)} every ${ctx.unit}. `
+      : `${ctx.story} After ${m} ${plural(ctx.unit, m)} there are ${fmt(am)} ${ctx.what}, and that number ${rPhrase(r)} every ${ctx.unit}. `;
+    prompt += `Let $${unitN}$ be the number of ${ctx.what} after $n$ ${plural(ctx.unit, 2)}.`;
+    parts.push({ type: 'rule', label: `$${unitN} =$`, truth, var: 'n', placeholder: 'e.g. 3(2)^(n - 1)', help: RULE_HELP, answerTex: `$${anchorTex(m, am)}$, or any equivalent form` });
     parts.push({ type: 'number', label: `How many ${ctx.what} after ${N} ${plural(ctx.unit, N)}?`, answer: term(N) });
-    steps.push(`The starting amount is the initial value: $${f}(0) = ${fmtT(a0)}$.`);
+    steps.push(m === 0 ? `The starting amount is $${f}(0) = ${fmtT(am)}$.` : `You know a term: $${f}(${m}) = ${fmtT(am)}$.`);
     steps.push(`"${rPhrase(r).replace(/^is /, '')}" every ${ctx.unit} means the common ratio is $r = ${r.tex()}$.`);
-    steps.push(`Model: $${unitN} = ${ruleTex(a0, r)}$.`);
+    steps.push(`Use $${f}(n) = ${f}(k)\\cdot r^{\\,n-k}$ with the term you know: $${unitN} = ${anchorTex(m, am)}$.`
+      + (m === 0 ? '' : ` (Equivalent forms work too, like $${unitN} = ${anchorTex(0, a0)}$.)`));
   } else {
     const aj = term(j), ak = term(k), gap = k - j;
     prompt = `${ctx.story} Let $${unitN}$ be the number of ${ctx.what} after $n$ ${plural(ctx.unit, 2)}. `
       + `You know that $${f}(${j}) = ${fmtT(aj)}$ and $${f}(${k}) = ${fmtT(ak)}$.`;
     parts.push({ type: 'number', label: 'Common ratio $r =$', answer: r });
-    parts.push({ type: 'number', label: `Initial value $${f}(0) =$`, answer: a0 });
-    parts.push({ type: 'rule', label: `$${unitN} =$`, truth, var: 'n', placeholder: 'e.g. 3(2)^n', help: RULE_HELP, answerTex: `$${ruleTex(a0, r)}$` });
+    m = j;
+    parts.push({ type: 'rule', label: `$${unitN} =$`, truth, var: 'n', placeholder: 'e.g. 12(2)^(n - 2)', help: RULE_HELP, answerTex: `$${anchorTex(j, aj)}$, or any equivalent form` });
     parts.push({ type: 'number', label: `How many ${ctx.what} after ${N} ${plural(ctx.unit, N)}?`, answer: term(N) });
     const ratio = ak.div(aj);
     steps.push(`From $n = ${j}$ to $n = ${k}$ is ${gap} steps, so the ratio is applied ${gap} times: $r^{${gap}} = \\dfrac{${f}(${k})}{${f}(${j})} = \\dfrac{${fmtT(ak)}}{${fmtT(aj)}} = ${ratio.tex()}$.`);
     steps.push(`So $r = ${gap === 2 ? '\\sqrt' : `\\sqrt[${gap}]`}{${ratio.tex()}} = ${r.tex()}$.` + (gap % 2 === 0 ? ` (The other square root, $-${r.tex()}$, makes no sense here, since the number of ${ctx.what} can't be negative.)` : ''));
-    steps.push(`Step back from $${f}(${j})$ to $n = 0$ by dividing by $r$ ${j === 1 ? 'once' : j + ' times'}: $${f}(0) = \\dfrac{${fmtT(aj)}}{${j === 1 ? r.tex() : `\\left(${r.tex()}\\right)^{${j}}`}} = ${fmtT(a0)}$.`);
-    steps.push(`Model: $${unitN} = ${ruleTex(a0, r)}$. (Equivalent forms like $${f}(n) = ${fmtT(aj)}\\left(${r.tex()}\\right)^{n - ${j}}$ also work.)`);
+    steps.push(`Use $${f}(n) = ${f}(k)\\cdot r^{\\,n-k}$ with a term you know, $${f}(${j}) = ${fmtT(aj)}$: $${unitN} = ${anchorTex(j, aj)}$.`);
+    steps.push(`Any term works. Using $${f}(${k})$ gives $${unitN} = ${anchorTex(k, ak)}$, and stepping all the way back to $${f}(0)$ gives $${unitN} = ${anchorTex(0, a0)}$. These are all the same function.`);
   }
-  steps.push(`After ${N} ${plural(ctx.unit, N)}: $${f}(${N}) = ${a0.tex()}\\left(${r.tex()}\\right)^{${N}} = ${fmtT(term(N))}$.`);
+  steps.push(`After ${N} ${plural(ctx.unit, N)}: $${f}(${N}) = ${fmtT(term(m))}\\left(${r.tex()}\\right)^{${N - m}} = ${fmtT(term(N))}$.`);
 
   return {
     tag: level === 1 ? (grows ? 'rate in words, growth' : 'rate in words, decay') : (grows ? 'two points, growth' : 'two points, decay'),
     prompt, parts, solution: steps.join('<br>'),
-    _check: { a0: a0.value(), r: r.value(), N, j, k, truth, season: seasonFor(date), grows },
+    _check: { a0: a0.value(), r: r.value(), N, j, k, m, truth, season: seasonFor(date), grows },
   };
 }
 
