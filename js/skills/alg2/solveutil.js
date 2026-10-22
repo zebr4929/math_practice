@@ -1,6 +1,6 @@
 // Shared tools for "solve the quadratic" skills: exact roots, display, and checking
 // student answers like "3 ± 2√5", "(3 ± 2i√3)/2", "-3/2, 4" or "x = 5".
-import { F, Frac, gcd } from '../../math.js?v=2.1';
+import { F, Frac, gcd } from '../../math.js?v=2.2';
 
 // ---------- exact roots of ax^2 + bx + c = 0 ----------
 export function splitSquare(n) {

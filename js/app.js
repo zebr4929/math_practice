@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=2.1';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.1';
-import { CONFIG } from './config.js?v=2.1';
-import { makeGrid } from './graph.js?v=2.1';
+import { SKILLS, byId } from './skills/index.js?v=2.2';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.2';
+import { CONFIG } from './config.js?v=2.2';
+import { makeGrid, makeLogGrid } from './graph.js?v=2.2';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -90,19 +90,14 @@ function signIn() {
 }
 
 // ---------- home ----------
-function home() {
-  const best = store.get('pp.best', {});
-  const list = mySkills();
-  const groups = [...new Set(list.map(s => s.group))];
-  app.innerHTML = `
-    <div class="crumb muted">${esc(student.course)}</div>
-    <h1>Choose a skill</h1>
-    <p class="muted">Each set has ${SET_SIZE} problems. Start at Easy and move up when you can get most of a set right.</p>
-    ${groups.map(g => `
-      <div class="group-title">${esc(g)}</div>
-      ${list.filter(s => s.group === g).map(s => `
+// (function declarations, because route() runs before the rest of this file is evaluated)
+function lessonKey(s) { return s.lesson ? s.lesson.split(/[^\d.]/)[0].split('.').map(Number) : [999]; }
+function byLesson(a, b) { const x = lessonKey(a), y = lessonKey(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); }
+
+function skillCard(s, best) {
+  return `
         <div class="card skill">
-          <div><h2>${esc(s.title)}</h2><p class="muted">${esc(s.blurb)}</p></div>
+          <div><h2>${s.lesson ? `<span class="lesson">${esc(s.lesson)}</span>` : ''}${esc(s.title)}</h2><p class="muted">${esc(s.blurb)}</p></div>
           <div class="levels">
             ${[1, 2, 3].map(L => {
               const b = best[`${s.id}.${L}`];
@@ -113,8 +108,40 @@ function home() {
               </a>`;
             }).join('')}
           </div>
-        </div>`).join('')}
-    `).join('')}`;
+        </div>`;
+}
+
+function home() {
+  const best = store.get('pp.best', {});
+  const list = mySkills();
+  const groups = [...new Set(list.map(s => s.group))];
+  const course = courseOf(student);
+  const intro = `
+    <div class="crumb muted">${esc(student.course)}</div>
+    <h1>Choose a skill</h1>
+    <p class="muted">Each set has ${SET_SIZE} problems. Start at Easy and move up when you can get most of a set right.</p>`;
+  if (!course?.collapsible) {
+    app.innerHTML = intro + groups.map(g => `
+      <div class="group-title">${esc(g)}</div>
+      ${list.filter(s => s.group === g).map(s => skillCard(s, best)).join('')}`).join('');
+    window.scrollTo(0, 0);
+    return;
+  }
+  // collapsible sections: open the teacher's current section(s) by default, then remember each student's choices
+  const openKey = 'pp.open.' + course.skills;
+  const open = new Set(store.get(openKey, course.openSections || []));
+  app.innerHTML = intro + groups.map(g => {
+    const items = list.filter(s => s.group === g).sort(byLesson);
+    return `
+      <details class="section" data-group="${esc(g)}" ${open.has(g) ? 'open' : ''}>
+        <summary><span class="sec-title">${esc(g)}</span><span class="sec-count">${items.length} skill${items.length === 1 ? '' : 's'}</span></summary>
+        <div class="sec-body">${items.map(s => skillCard(s, best)).join('')}</div>
+      </details>`;
+  }).join('');
+  app.querySelectorAll('details.section').forEach(d => d.addEventListener('toggle', () => {
+    const now = [...app.querySelectorAll('details.section')].filter(x => x.open).map(x => x.dataset.group);
+    store.set(openKey, now);
+  }));
   window.scrollTo(0, 0);
 }
 
@@ -167,7 +194,12 @@ function showProblem(state) {
   // wire inputs
   p.parts.forEach((part, k) => {
     if (part.type === 'graph') {
-      const gr = makeGrid({ ...part.window, snap: part.snap || 1, interactive: true });
+      const gr = part.logScale ? makeLogGrid(part.logScale) : makeGrid({ ...part.window, snap: part.snap || 1, interactive: true });
+      if (part.base) {                       // something drawn on the grid before the student plots (e.g. f, to graph its inverse)
+        if (part.base.line) gr.curve(x => x, 'yx-line');
+        if (part.base.fn) gr.curve(part.base.fn, 'curve base');
+        for (const q of part.base.points || []) gr.label(q.x, q.y, q.text || '', 'pt-label', 'pt-base');
+      }
       card.querySelector(`#gr${k}`).appendChild(gr.root);
       state.grids[k] = gr;
       return;

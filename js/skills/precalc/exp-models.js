@@ -1,7 +1,7 @@
 // AP Precalculus, Unit 2:
 //  1. Exponential models from geometric-sequence information, in seasonal word problems.
 //  2. Rewriting exponential functions in y = a·b^x form with exponent laws.
-import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.1';
+import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.2';
 
 // ================================================================
 // Seasonal contexts
@@ -59,7 +59,8 @@ export const expModels = {
   id: 'exp-models',
   course: 'precalc',
   title: 'Exponential Models from Geometric Sequences',
-  group: 'Unit 2: Exponential functions',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.2',
   blurb: 'Find the common ratio from the story, write the model from a term you know, then use it.',
   levels: {
     1: { name: 'Easy', desc: 'One value and the growth or decay rate given in words' },
@@ -146,7 +147,8 @@ export const expRewrite = {
   id: 'exp-rewrite',
   course: 'precalc',
   title: 'Rewriting Exponentials in y = abˣ Form',
-  group: 'Unit 2: Exponential functions',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.4',
   blurb: 'Use exponent laws in reverse to rewrite the function as y = abˣ.',
   levels: {
     1: { name: 'Easy', desc: 'One shift in the exponent, like y = (1/3)(9)^(x - 2)' },

@@ -26,8 +26,9 @@ for (const s of SKILLS) for (const L of [1,2,3]) {
       if (part.type === 'rule') {
         // the rule printed in the solution must pass the checker
         const m = p.solution.match(/simplifies to \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/Rule: \$[a-z]_n = ([^$]+)\$/) || p.solution.match(/term you know[^$]*\$[^$]*\$[^$]*\$[A-Z]\(n\) = ([^$]+)\$/) || p.solution.match(/the term you know: \$[A-Z]\(n\) = ([^$]+)\$/);
-        const tex = m[1].replace(/\{,\}/g, '').replace(/\\left\(/g,'(').replace(/\\right\)/g,')').replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)').replace(/\^\{([^}]*)\}/g,'^($1)');
-        if (!checkRule(tex, part.truth).ok) fail('rule self-check: ' + tex, p);
+        const src = m ? m[1] : part.answerTex.split('$')[1];
+        const tex = src.replace(/\{,\}/g, '').replace(/\\left\(/g,'(').replace(/\\right\)/g,')').replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)').replace(/\^\{([^}]*)\}/g,'^($1)');
+        if (!checkRule(tex, part.truth, part.var || 'n').ok) fail('rule self-check: ' + tex, p);
       }
     }
     // independent checks
@@ -402,5 +403,105 @@ console.log('problems', count, 'errors', errors);
     for (let seed = 1; seed <= 300; seed++) { const p = Fm.factoredFromData.generate(3, makeRng(seed * 7919 + 3)); if (p.tag === 'word problem table' && !word.test(p.prompt)) B('season story', p); }
   }
   console.log('quadratics check: bad =', bad); errors += bad;
+}
+// AP Precalc 2.5 to 2.9
+{
+  const D = await import('../js/skills/precalc/exp-data.js' + v);
+  const C = await import('../js/skills/precalc/composition.js' + v);
+  const I = await import('../js/skills/precalc/inverses.js' + v);
+  const Lg = await import('../js/skills/precalc/logs.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 15) console.log('U2 FAIL', m, (p?.prompt || '').slice(0, 150)); };
+  const typed = tex => tex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\left\|/g, 'abs(').replace(/\\right\|/g, ')')
+    .replace(/\\d?t?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)').replace(/\{,\}/g, '').replace(/\\cdot/g, '*');
+  const R = (seed, L, salt) => makeRng(seed * 7919 + L * 97 + salt);
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 1500; seed++) {
+    // shifted data
+    { const p = D.expShifted.generate(L, R(seed, L, 1)), c = p._check;
+      c.vals.forEach((y, i) => { if (Math.abs(c.truth(c.x0 + i) - y) > 1e-9) B('shifted table', p); });
+      const r = c.vals.slice(1).map((y, i) => (y - c.k) / (c.vals[i] - c.k)); if (r.some(q => Math.abs(q - c.b) > 1e-9)) B('shifted ratio', p);
+      if (!checkNumber(String(c.k), p.parts[0].answer).ok) B('k', p);
+      if (!checkRule(`${c.a}(${new Frac(...fr(c.b)).text()})^x + ${c.k}`, c.truth, 'x').ok) B('shifted rule', p);
+      if (checkRule(`${c.a}(${new Frac(...fr(c.b)).text()})^x`, c.truth, 'x').ok) B('missing k accepted', p); }
+    // units
+    { const p = D.expUnits.generate(L, R(seed, L, 2)), c = p._check;
+      const want2 = c.a * Math.pow(c.b, c.flip ? c.N2 * c.per : c.N2 / c.per);
+      if (Math.abs(want2 - c.ans2) > 1e-6 * want2) B('units conversion', p);
+      const last = p.parts[p.parts.length - 1].check;
+      if (!last(want2.toFixed(3)).ok) B('3dp rejected', p);
+      if (Math.abs(want2 - Math.round(want2 * 100) / 100) > 0.0011 && last((Math.round(want2 * 100) / 100).toFixed(2)).ok) B('2dp accepted', p);
+      const wrong = c.a * Math.pow(c.b, c.N2); if (Math.abs(wrong - want2) > 0.01 && last(wrong.toFixed(3)).ok) B('unit mistake accepted', p);
+      if (L === 2 && !p.parts[0].check(`${c.a}(${c.b})^t`).ok) B('model', p);
+      if (L === 3) { const ch = p.parts[0].check, vv = c.v;
+        const exact = c.flip ? `${c.a}(${c.b})^(${c.per}${vv})` : `${c.a}(${c.b})^(${vv}/${c.per})`;
+        const B2 = c.flip ? Math.pow(c.b, c.per) : Math.pow(c.b, 1 / c.per);
+        if (!ch(exact).ok) B('exact model ' + exact, p);
+        if (!ch(`${c.a}(${B2.toFixed(3)})^${vv}`).ok) B('rounded model', p);
+        if (ch(`${c.a}(${c.b})^${vv}`).ok) B('unconverted model accepted', p); }
+      if (L === 1 && !p.parts[0].check(c.ans1.toFixed(3)).ok) B('ans1', p); }
+    // composition expressions
+    { const p = C.compExpr.generate(L, R(seed, L, 3));
+      for (const part of p.parts) { const t = typed(part.answerTex.split('$')[1]); const r = part.check(t); if (!r.ok) B('comp own ' + t + ' ' + JSON.stringify(r), p); }
+      if (L < 3 && p.parts[0].check('x').ok) B('comp x accepted', p); }
+    // composition reps
+    { const p = C.compReps.generate(L, R(seed, L, 4));
+      if (p.parts.length !== (L === 1 ? 2 : 3)) B('reps parts', p);
+      if (p.parts.some(pt => !pt.answer.isInt())) B('reps int', p);
+      if (/undefined|NaN/.test(p.prompt + p.solution + (p.visual || ''))) B('reps text', p); }
+    // inverse table
+    { const p = I.invTable.generate(L, R(seed, L, 5)), { xs, ys } = p._check;
+      const inv = y => xs.filter((x, i) => ys[i] === y);
+      for (const pt of p.parts) {
+        const m = pt.label.match(/\^\{-1\}\((-?\d+)\) =\$$/);
+        if (m && pt.type === 'number' && !pt.label.includes('left') && !pt.label.includes('+')) { const pre = inv(+m[1]); if (pre.length !== 1 || pre[0] !== pt.answer.value()) B('inv table value', p); }
+        if (pt.type === 'mc') { const one = new Set(ys).size === ys.length; if (pt.answer !== (one ? 0 : 1)) B('inv table mc', p); }
+      } }
+    // inverse graph
+    { const p = I.invGraph.generate(L, R(seed, L, 6)), c = p._check;
+      c.pts.forEach((q, i) => { if (c.swapped[i].x !== q.y || c.swapped[i].y !== q.x) B('swap', p); });
+      if (!p.parts[0].check(c.swapped).ok) B('graph own', p);
+      if (p.parts[0].check(c.pts).ok && c.pts.some(q => q.x !== q.y)) B('original accepted', p);
+      const ys = c.pts.map(q => q.y);
+      const one = L === 1 ? new Set(ys).size === ys.length : (ys.every((y, i) => !i || y > ys[i - 1]) || ys.every((y, i) => !i || y < ys[i - 1]));
+      if (one !== c.oneToOne) B('one-to-one', p);
+      const mc = p.parts.find(q => q.type === 'mc'); if (mc && mc.answer !== (one ? 0 : 1)) B('graph mc', p); }
+    // inverse algebra
+    { const p = I.invAlgebra.generate(L, R(seed, L, 7)), c = p._check;
+      for (const x of [-2.5, -1, 0.3, 1.7, 3.1]) { const y = c.truth(x); if (isFinite(y) && Math.abs(c.fwd(y) - x) > 1e-7) B('not an inverse', p); }
+      const t = typed(p.parts[0].answerTex.split('$')[1]); if (!p.parts[0].check(t).ok) B('inv own ' + t, p);
+      if (p.parts[0].check('x').ok) B('x accepted', p); }
+    // log convert
+    { const p = Lg.logConvert.generate(L, R(seed, L, 8)), { S } = p._check, ch = p.parts[0].choices;
+      if (new Set(ch).size !== 4) B('convert dup', p);
+      const right = ch[p.parts[0].answer];
+      const num = q => { const t = typed(q); try { return new Function(`return ${t.replace(/\^/g, '**')}`)(); } catch { return NaN; } };
+      const [bb, cc, aa] = [S.b === 'e' ? Math.E : num(S.b), num(S.c), num(S.a)];
+      if ([bb, cc, aa].every(isFinite) && Math.abs(Math.pow(bb, cc) - aa) > 1e-9 * Math.max(1, aa)) B('false statement', p);
+      if (p._check.toLog && !right.includes('\\log') && !right.includes('\\ln')) B('toLog form', p);
+      if (!p._check.toLog && (right.includes('\\log') || right.includes('\\ln'))) B('toExp form', p); }
+    // log evaluate
+    { const p = Lg.logEval.generate(L, R(seed, L, 9));
+      for (const pt of p.parts) {
+        const tex = pt.label.slice(1, pt.label.lastIndexOf(' ='));
+        const m = tex.match(/^\\(log|ln)(?:_\{(\\frac\{1\}\{\d+\}|[^}]*)\})? (.+)$/);
+        if (!m) { B('parse ' + tex, p); continue; }
+        const base = m[1] === 'ln' ? Math.E : m[2] ? (m[2].startsWith('\\frac') ? 1 / +m[2].match(/\{(\d+)\}$/)?.[1] || NaN : +m[2]) : 10;
+        let arg = m[3].replace(/\\sqrt\{e\}/, String(Math.sqrt(Math.E))).replace(/\\frac\{1\}\{e\^\{(\d+)\}\}/, (_, k) => String(Math.exp(-k))).replace(/\\frac\{1\}\{e\}/, String(1 / Math.E)).replace(/^e\^\{(\d+)\}$/, (_, k) => String(Math.exp(+k))).replace(/^e$/, String(Math.E));
+        arg = arg.replace(/\\sqrt\{(\d+)\}/, (_, k) => String(Math.sqrt(+k))).replace(/\\frac\{(\d+)\}\{(\d+)\}/, (_, a, b) => String(a / b));
+        const val = Math.log(+arg) / Math.log(m[2] && m[2].startsWith('\\frac') ? 1 / +m[2].match(/\\frac\{1\}\{(\d+)/)[1] : base);
+        if (!isFinite(val) || Math.abs(val - pt.answer.value()) > 1e-9) B(`log value ${tex} = ${pt.answer.text()} (got ${val})`, p);
+        if (L === 1 && (!pt.answer.isInt() || pt.answer.value() < 1)) B('L1 answer', p);
+        if (L === 2 && (pt.answer.value() > 0)) B('L2 answer', p);
+        if (L === 3 && pt.answer.isInt() && !/frac\{1\}\{e|1\}\{2|1\}\{3/.test(tex)) B('L3 integer', p);
+      } }
+    // log plot
+    { const p = Lg.logPlot.generate(L, R(seed, L, 10)), c = p._check;
+      for (const q of c.pts) { const e = Math.floor(Math.log10(q.y) + 1e-9), m = +(q.y / Math.pow(10, e)).toFixed(6);
+        if (!c.mantissas.includes(m) || e < c.emin || e >= c.emax) B('plot value off grid ' + q.y, p);
+        if (Math.abs(q.x / c.xsnap - Math.round(q.x / c.xsnap)) > 1e-9) B('x snap', p); }
+      if (!p.parts[0].check(c.pts.map(q => ({ x: q.x, y: q.y }))).ok) B('plot own', p);
+      if (new Set(c.pts.map(q => q.x)).size !== c.pts.length) B('plot dup x', p); }
+  }
+  function fr(x) { for (let d = 1; d < 100; d++) if (Math.abs(x * d - Math.round(x * d)) < 1e-9) return [Math.round(x * d), d]; }
+  console.log('unit 2 (2.5-2.9) check: bad =', bad); errors += bad;
 }
 console.log('total errors', errors);

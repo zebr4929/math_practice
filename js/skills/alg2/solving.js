@@ -1,10 +1,10 @@
 // Solving quadratics: square roots, factoring, completing the square, quadratic formula,
 // plus simplifying radicals. Honors versions never produce imaginary answers.
-import { F, Frac, randInt, pick, nonzero, gcd } from '../../math.js?v=2.1';
+import { F, Frac, randInt, pick, nonzero, gcd } from '../../math.js?v=2.2';
 import {
   exactRoots, rootsTex, solutionChecker, solutionsPreview, splitSquare, eqTex, sideTex, arrange,
   SOLVE_KEYS, SOLVE_KEYS_REAL, simplifyIssue, readSolutions,
-} from './solveutil.js?v=2.1';
+} from './solveutil.js?v=2.2';
 
 const LIST_HELP = 'Separate solutions with commas, or use ± (type +-). Type sqrt for √.';
 const lin = (m, p) => `(${m === 1 ? '' : m === -1 ? '-' : m}x ${p < 0 ? '-' : '+'} ${Math.abs(p)})`;   // (mx + p)

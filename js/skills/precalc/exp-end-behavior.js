@@ -1,11 +1,12 @@
 // Skill: end behavior of exponential functions f(x) = a·b^(x-h) + k (AP Precalculus)
-import { F, randInt, pick, nonzero, readNumber } from '../../math.js?v=2.1';
+import { F, randInt, pick, nonzero, readNumber } from '../../math.js?v=2.2';
 
 export const skill = {
   id: 'exp-end-behavior',
   course: 'precalc',
   title: 'End Behavior of Exponential Functions',
-  group: 'Unit 2: Exponential functions',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.3',
   blurb: 'Complete the limits as x goes to negative and positive infinity.',
   levels: {
     1: { name: 'Easy', desc: 'Read the end behavior from a graph' },

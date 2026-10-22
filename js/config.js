@@ -7,7 +7,9 @@ export const CONFIG = {
   // Courses on the sign-in screen. `skills` says which skill set the course sees
   // (each skill file lists the sets it belongs to: 'precalc', 'accel', 'honors').
   courses: [
-    { name: 'AP Precalculus', skills: 'precalc' },
+    // collapsible: show skills in sections that open and close. openSections: the sections that
+    // start open for a student who has not opened or closed any yet (update as the year goes on).
+    { name: 'AP Precalculus', skills: 'precalc', collapsible: true, openSections: ['Unit 2 - Inverses and Composition', 'Unit 2 - Logarithms'] },
     { name: 'Accelerated Algebra II', skills: 'accel' },
     { name: 'Honors Algebra II', skills: 'honors' },
   ],
@@ -18,5 +20,5 @@ export const CONFIG = {
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '2.1',
+  version: '2.2',
 };

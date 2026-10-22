@@ -40,6 +40,22 @@ a { color: var(--maroon); }
 .muted { color: var(--grey); }
 .group-title { font-family: Poppins, sans-serif; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--grey); margin: 26px 0 8px; }
 
+/* collapsible sections */
+.section { background: var(--card); border: 1px solid var(--grey-mid); border-radius: var(--radius); margin: 14px 0; }
+.section > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px; font-family: Poppins, sans-serif; font-weight: 600; color: var(--maroon); font-size: 1.05rem;
+}
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary::before { content: '\25B8'; color: var(--gold); margin-right: 4px; transition: transform .15s; display: inline-block; }
+.section[open] > summary::before { transform: rotate(90deg); }
+.section > summary .sec-title { flex: 1; }
+.section > summary .sec-count { font-family: inherit; font-weight: 400; font-size: .85rem; color: var(--grey); }
+.section > summary:hover { background: #fffafb; border-radius: var(--radius); }
+.sec-body { padding: 0 14px 6px; }
+.sec-body .card { box-shadow: none; border: 1px solid var(--grey-light); }
+.lesson { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--maroon-dark); background: #f3f1e4; border: 1px solid var(--gold); border-radius: 6px; padding: 1px 7px; margin-right: 8px; vertical-align: 2px; }
+
 /* sign in */
 .signin { max-width: 460px; margin: 30px auto; }
 label.field { display: block; font-weight: 700; margin: 14px 0 4px; }
@@ -141,6 +157,9 @@ input[type=text]:focus, select:focus { outline: none; border-color: var(--maroon
 .coord-grid .curve.reveal { stroke: var(--teal); stroke-width: 2; opacity: .75; }
 .coord-grid .asym { stroke: var(--grey); stroke-width: 1.5; stroke-dasharray: 6 5; }
 .coord-grid .pt-given { fill: var(--maroon); }
+.coord-grid .curve.base { stroke: var(--grey); stroke-width: 2.5; }
+.coord-grid .pt-base { fill: var(--grey); }
+.coord-grid .yx-line { fill: none; stroke: var(--gold); stroke-width: 1.5; stroke-dasharray: 6 5; }
 .coord-grid .pt-label { font-size: 13px; fill: var(--ink); font-family: Carlito, sans-serif; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 4px; }
 .coord-grid .pt-student { fill: var(--maroon); stroke: #fff; stroke-width: 1.5; }
 .coord-grid .pt-ghost { fill: var(--maroon); opacity: .25; pointer-events: none; }

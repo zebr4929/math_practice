@@ -2,13 +2,14 @@
 // Every function has equal degree on top and bottom (so the HA is a ratio of leading
 // coefficients) and exactly one hole. Negatives appear out front, in constants, and in
 // "backwards" factors like (2 - 3x).
-import { F, Frac, randInt, pick, nonzero, paren } from '../../math.js?v=2.1';
+import { F, Frac, randInt, pick, nonzero, paren } from '../../math.js?v=2.2';
 
 export const skill = {
   id: 'rational-signs',
   title: 'Leading Coefficients & Hole Values',
   course: 'precalc',
-  group: 'Unit 1: Rational functions',
+  group: 'Unit 1 - Polynomial and Rational Functions',
+  lesson: '1.7, 1.10',
   blurb: 'Find the horizontal asymptote and the hole of a factored rational function without losing a negative.',
   levels: {
     1: { name: 'Easy', desc: 'Factors in standard form, with negatives out front and in constants' },

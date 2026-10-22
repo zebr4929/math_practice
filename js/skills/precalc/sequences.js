@@ -1,5 +1,5 @@
 // Skills: arithmetic and geometric sequence rules (Lesson 2.1)
-import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=2.1';
+import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=2.2';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'Write the rule from the first few terms' },
@@ -11,7 +11,8 @@ export const arithmetic = {
   id: 'arithmetic',
   title: 'Arithmetic Sequences',
   course: 'precalc',
-  group: 'Unit 2: Sequences',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.1',
   blurb: 'Write a rule for aₙ and use it to find a later term.',
   levels: LEVELS,
   generate(level, rng) { return arith(level, rng); },
@@ -21,7 +22,8 @@ export const geometric = {
   id: 'geometric',
   title: 'Geometric Sequences',
   course: 'precalc',
-  group: 'Unit 2: Sequences',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.1',
   blurb: 'Write a rule for gₙ and use it to find a later term.',
   levels: LEVELS,
   generate(level, rng) { return geom(level, rng); },
@@ -205,7 +207,8 @@ export const geometricForms = {
   id: 'geometric-forms',
   title: 'Equivalent Forms of Geometric Rules',
   course: 'precalc',
-  group: 'Unit 2: Sequences',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.1',
   blurb: 'Recognize geometric rules written from different starting terms, like 4(1/2)^(n - 2) = 8(1/2)^(n - 1).',
   levels: {
     1: { name: 'Easy', desc: 'Pick the rule equivalent to a given rule' },

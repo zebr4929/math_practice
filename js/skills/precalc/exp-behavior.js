@@ -1,12 +1,13 @@
 // AP Precalculus, Unit 2: increasing/decreasing and concavity of exponential functions,
 // from a table of values or from the equation.
-import { F, randInt, pick } from '../../math.js?v=2.1';
+import { F, randInt, pick } from '../../math.js?v=2.2';
 
 export const skill = {
   id: 'exp-behavior',
   course: 'precalc',
   title: 'Increasing, Decreasing and Concavity of Exponentials',
-  group: 'Unit 2: Exponential functions',
+  group: 'Unit 2 - Sequences and Exponentials',
+  lesson: '2.3',
   blurb: 'Decide whether an exponential is increasing or decreasing, and concave up or down.',
   levels: {
     1: { name: 'Easy', desc: 'From a table, positive outputs' },

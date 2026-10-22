@@ -17,6 +17,16 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | Rewriting Exponentials in y = abˣ Form (a can be a fraction or negative) | One shift in the exponent | Coefficient on x or fractional exponent | Shifts with coefficients, negative exponents |
 | AP Precalculus | Equivalent Forms of Geometric Rules | Pick the rule equivalent to a given rule | Match terms to a rule written from a different term | Same, with negative or fractional ratios |
 | AP Precalculus | Increasing, Decreasing and Concavity of Exponentials | From a table, positive outputs | From y = abˣ, a positive or negative | Tables with negative outputs, equations with shifts |
+| AP Precalculus | 2.5 Exponential Data with a Vertical Shift | x from 0, whole-number base | Growth or decay, a can be negative | x not from 0, fractional bases |
+| AP Precalculus | 2.5 Percent Growth and Decay with Changing Units | Model given, values in two units | Write the model, values in two units | Rewrite the model in other units |
+| AP Precalculus | 2.7 Composition as an Expression | Linear and linear | Linear and quadratic | Square roots and rational functions |
+| AP Precalculus | 2.7 Composition with Multiple Representations | Table and equation | Graph, table, equation | Graph, table, piecewise, verbal; longer chains |
+| AP Precalculus | 2.8 Inverses from a Table | Read inverse values | Is the inverse a function? | Inverse of an inverse value |
+| AP Precalculus | 2.8 Graphing Inverses | Points | Segmented one-to-one graph | Graphs that may not be one-to-one |
+| AP Precalculus | 2.8 Finding Inverses Algebraically | Linear | Linear with fractions | Rational (ax + b)/(cx + d) |
+| AP Precalculus | 2.9 Exponential and Logarithmic Form | Exponential to log, numbers | Log to exponential, log/ln/variables | Both directions, negative and fractional exponents |
+| AP Precalculus | 2.9 Evaluating Logarithms | Whole-number answers | Zero and negative answers | Fractional answers |
+| AP Precalculus | 2.9 Plotting on a Logarithmic Scale | Gridline values | Four decades, values below 1 | Values between gridlines, half-unit x |
 | Accelerated + Honors | Factoring Quadratics | a = 1 | a prime, plus special products | a not prime |
 | Accelerated + Honors | Solving by Factoring | a = 1 | Prime a, special products, terms on both sides | Composite a, rearranging |
 | Accelerated (imaginary) / Honors (real only) | Solving by Completing the Square | Even b | Odd b, constant on the right | Divide out a |
@@ -47,3 +57,7 @@ Setup instructions are in [SETUP.md](SETUP.md).
 - `vendor/katex/`: math rendering (KaTeX, MIT license)
 
 Seasonal word problems: the exponential models skill picks its stories by date. October uses Halloween stories, November 1 through January 1 uses Thanksgiving and Christmas stories, and the rest of the year uses school-life stories. The story lists are at the top of `js/skills/precalc/exp-models.js`.
+
+Home page sections (AP Precalculus): each skill file sets `group` (the section) and `lesson` (the AP topic number shown on the card). In `js/config.js`, `collapsible: true` turns on the open/close sections for a course, and `openSections` lists the sections that start open for students who have not opened or closed any yet. Update it as the year moves on.
+
+Calculator answers (2.5 percent and units problems) accept values rounded or truncated to 3 decimal places.
