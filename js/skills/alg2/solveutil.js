@@ -1,6 +1,6 @@
 // Shared tools for "solve the quadratic" skills: exact roots, display, and checking
 // student answers like "3 ± 2√5", "(3 ± 2i√3)/2", "-3/2, 4" or "x = 5".
-import { F, Frac, gcd } from '../../math.js?v=2.2';
+import { F, Frac, gcd } from '../../math.js?v=2.3';
 
 // ---------- exact roots of ax^2 + bx + c = 0 ----------
 export function splitSquare(n) {
@@ -292,3 +292,61 @@ export function arrange(a, b, c, rng, style) {
 }
 
 export { F, Frac };
+
+// ---------- a single complex number, like 3 - 2i, 6i√2, (-2 + 11i)/5 ----------
+export function readComplex(str) {
+  const s = normalize(str).replace(/^[a-z]?=/, '');
+  if (!s) return { error: 'Enter your answer.' };
+  if (/[,;±]/.test(s)) return { error: 'Enter one simplified number, like 3 - 2i.' };
+  let tree;
+  try { tree = parseTree(s); } catch { return { error: 'Could not read that. Examples: 3 - 2i,  6i√2,  (-2 + 11i)/5' }; }
+  let value;
+  try { value = evalC(tree, 1); } catch { return { error: 'Could not read that. Examples: 3 - 2i,  6i√2,  (-2 + 11i)/5' }; }
+  return { tree, value, decimal: /\d\.\d|^\.\d|[^\d]\.\d/.test(s) };
+}
+
+// Is the tree in a + bi form? Each term is a real number (whole, fraction or k√n) or a real number times i,
+// with at most one real and one imaginary term; (a + bi)/d with a whole-number d is also fine.
+export function complexFormIssue(tree) {
+  let t = strip(tree);
+  if (t.op === '/' && intLit(t.b) !== null) t = strip(t.a);
+  const kinds = [];
+  for (const term of terms(t)) {
+    let iCount = 0, nums = 0, ok = true;
+    (function walk(n) {
+      n = strip(n);
+      if (n.num !== undefined) { nums++; return; }
+      if (n.i) { iCount++; return; }
+      if (n.op === 'sqrt') { if (intLit(n.a) === null || intLit(n.a) < 0) ok = false; return; }
+      if (n.op === 'neg' || n.op === 'pm1') return walk(n.a);
+      if (n.op === '*') { walk(n.a); walk(n.b); return; }
+      if (n.op === '/' && intLit(n.b) !== null) { walk(n.a); return; }
+      ok = false;                                     // parentheses with sums inside, powers, etc.
+    })(term);
+    if (ok && nums > 1) return 'Multiply the numbers together so each part has a single coefficient.';
+    if (!ok || iCount > 1) return 'Write your answer in the form a + bi: no i² or powers of i, no products left in parentheses, and no i in a denominator.';
+    kinds.push(iCount ? 'i' : 'r');
+  }
+  if (kinds.filter(k => k === 'r').length > 1 || kinds.filter(k => k === 'i').length > 1) return 'Combine like terms: one real part and one imaginary part.';
+  return '';
+}
+
+// checker for one complex value [re, im]
+export function complexChecker(target) {
+  return str => {
+    const got = readComplex(str);
+    if (got.error) return { ok: false, msg: got.error, format: true };
+    if (!near(got.value, target)) return { ok: false };
+    if (got.decimal && !(Number.isInteger(target[0] * 1000) && Number.isInteger(target[1] * 1000))) return { ok: false, msg: 'Give an exact answer, not a decimal.' };
+    const form = complexFormIssue(got.tree);
+    if (form) return { ok: false, msg: 'That is the right value, but not simplified. ' + form };
+    const issue = simplifyIssue(got.tree);
+    if (issue) return { ok: false, msg: 'That is the right value, but not simplified. ' + issue };
+    return { ok: true };
+  };
+}
+export function complexPreview(str) {
+  const s = normalize(str);
+  if (!s) return '';
+  try { return texOf(parseTree(s)); } catch { return null; }
+}

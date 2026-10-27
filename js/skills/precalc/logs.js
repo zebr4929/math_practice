@@ -2,8 +2,8 @@
 //  1. Converting between exponential and logarithmic form.
 //  2. Evaluating logarithms without a calculator.
 //  3. Plotting points on a graph with a logarithmic (base 10) vertical axis.
-import { F, randInt, pick, shuffle } from '../../math.js?v=2.2';
-import { logValue } from '../../graph.js?v=2.2';
+import { F, randInt, pick, shuffle } from '../../math.js?v=2.3';
+import { logValue } from '../../graph.js?v=2.3';
 
 const GROUP = 'Unit 2 - Logarithms';
 

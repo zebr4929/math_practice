@@ -504,4 +504,89 @@ console.log('problems', count, 'errors', errors);
   function fr(x) { for (let d = 1; d < 100; d++) if (Math.abs(x * d - Math.round(x * d)) < 1e-9) return [Math.round(x * d), d]; }
   console.log('unit 2 (2.5-2.9) check: bad =', bad); errors += bad;
 }
+// Accelerated Algebra II chapter 2 additions
+{
+  const Cx = await import('../js/skills/alg2/complex.js' + v);
+  const SE = await import('../js/skills/alg2/solving-extra.js' + v);
+  const Fm = await import('../js/skills/alg2/forms.js' + v);
+  const Ap = await import('../js/skills/alg2/applications.js' + v);
+  const Fa = await import('../js/skills/alg2/factoring.js' + v);
+  const U = await import('../js/skills/alg2/solveutil.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 15) console.log('A2 FAIL', m, (p?.prompt || '').slice(0, 140)); };
+  const typedC = tex => tex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\d?t?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, '√($1)').replace(/\\cdot/g, '*').replace(/\{|\}/g, '').replace(/\s+/g, '');
+  const typedE = tex => tex.replace(/^y = |^f\(x\) = /, '').replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\d?t?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\^\{([^{}]*)\}/g, '^($1)').replace(/\\infty/g, '∞').replace(/\\,|\\ /g, '').replace(/\{|\}/g, '');
+  const own = (part, p, name) => { const t = part.answerTex.split('$')[1]; const r = part.check(typedC(t)); if (!r.ok) B(name + ' own ' + typedC(t) + ' ' + JSON.stringify(r), p); };
+  const R = (seed, L, salt) => makeRng(seed * 7919 + L * 101 + salt);
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 1500; seed++) {
+    { const p = Cx.sqrtNegatives.generate(L, R(seed, L, 1));
+      p.parts.forEach((pt, j) => { own(pt, p, 'sqrt');
+        const label = pt.label.slice(1, -3);
+        const val = U.readComplex(typedC(label).replace(/√\(-(\d+)\)/g, '(i√($1))'));
+        if (val.error || Math.abs(val.value[0] - p._check.items[j][1][0]) > 1e-9 || Math.abs(val.value[1] - p._check.items[j][1][1]) > 1e-9) B('sqrt value ' + label, p);
+        if (pt.check(typedC(label)).ok) B('unsimplified accepted ' + label, p); }); }
+    { const p = Cx.powersOfI.generate(L, R(seed, L, 2));
+      p.parts.forEach((pt, j) => { own(pt, p, 'pow');
+        const tex = pt.label.slice(1, -3); const ex = [...tex.matchAll(/i\^\{(\d+)\}/g)].map(m => +m[1]);
+        const P = n => [[1, 0], [0, 1], [-1, 0], [0, -1]][n % 4];
+        let want = L === 1 ? P(ex[0]) : L === 2 ? P(ex[0] + ex[1]) : (tex.includes('-') ? [P(ex[0])[0] - P(ex[1])[0], P(ex[0])[1] - P(ex[1])[1]] : [P(ex[0])[0] + P(ex[1])[0], P(ex[0])[1] + P(ex[1])[1]]);
+        const got = p._check.items[j][1]; if (want[0] !== got[0] || want[1] !== got[1]) B('power value ' + tex, p); }); }
+    { const p = Cx.complexOps.generate(L, R(seed, L, 3));
+      p.parts.forEach((pt, j) => { own(pt, p, 'ops');
+        const label = pt.label.slice(1, -3);
+        const val = U.readComplex(typedC(label));
+        const want = p._check.items[j][1];
+        if (val.error || Math.abs(val.value[0] - want[0]) > 1e-9 || Math.abs(val.value[1] - want[1]) > 1e-9) B('ops value ' + label + ' ' + JSON.stringify(val.value) + ' vs ' + want, p);
+        if (L > 1 && pt.check(typedC(label)).ok) B('unsimplified ops accepted ' + label, p); }); }
+    { const p = SE.perfectSquare.generate(L, R(seed, L, 4)), { b, c } = p._check;
+      if (Math.abs(c - (b / 2) ** 2) > 1e-12) B('psq c', p); own(p.parts[1], p, 'psq');
+      if (p.parts[1].check(`x^2 + ${b}x + ${c}`).ok) B('psq expanded accepted', p); }
+    { const p = SE.discriminant.generate(L, R(seed, L, 5)), c = p._check;
+      if (L < 3) { if (c.D !== c.b * c.b - 4 * c.a * c.c) B('disc D', p); if (p.parts[1].answer !== (c.D > 0 ? 0 : c.D === 0 ? 1 : 2)) B('disc type', p); }
+      else {
+        const part = p.parts[0];
+        const D = k => (c.b === 'k' ? k * k - 4 * c.a * c.c : c.b * c.b - 4 * c.a * k);
+        if (part.type === 'list') { if (part.answer.some(k => D(k.value()) !== 0)) B('k one', p); }
+        else if (part.type === 'number') { if (Math.abs(D(part.answer.value())) > 1e-9) B('k one const', p); }
+        else { own(part, p, 'k');
+          // the endpoint must make the discriminant 0, and a point inside must make it negative
+          const ends = (c.b === 'k') ? [Math.sqrt(4 * c.a * c.c)] : [c.b * c.b / (4 * c.a)];
+          if (Math.abs(D(ends[0])) > 1e-9) B('k endpoint', p);
+          if (D(c.b === 'k' ? 0 : ends[0] + 1) >= 0) B('k inside', p);
+        } } }
+    { const p = Fm.coefFromSolutions.generate(L, R(seed, L, 6)), c = p._check;
+      const a = c.a || 1; const f = x => a * x * x + c.b * x + c.c;
+      for (const x of [c.r, c.s ?? c.other]) if (Math.abs(f(x)) > 1e-9) B('coef root', p); }
+    { const p = Fm.vertexFromPoint.generate(L, R(seed, L, 7)), c = p._check;
+      if (Math.abs(c.fn(c.x) - c.y) > 1e-9 || Math.abs(c.fn(c.h) - c.k) > 1e-9) B('vfp', p); own(p.parts[0], p, 'vfp');
+      if (p.parts[0].check(`${c.a}x^2`).ok) B('vfp wrong accepted', p); }
+    { const p = Fm.incDec.generate(L, R(seed, L, 8)), c = p._check;
+      for (const pt of p.parts) { const t = typedE(pt.answerTex.split('$')[1]); if (!pt.check(t).ok) B('incdec own ' + t, p); }
+      const [inc, dec] = p.parts;
+      const hs = String(c.h);
+      if (!inc.check(c.up ? `x > ${hs}` : `x < ${hs}`).ok) B('inc inequality', p);
+      if (inc.check(c.up ? `x < ${hs}` : `x > ${hs}`).ok) B('inc reversed accepted', p);
+      if (!dec.check(c.up ? `(-∞, ${hs}]` : `[${hs}, ∞)`).ok) B('dec bracket', p); }
+    { const p = Ap.projectile.generate(L, R(seed, L, 9)), c = p._check, h = t => -c.g * t * t + c.v * t + c.h0;
+      if (Math.abs(h(c.T) - c.H) > 1e-6 || Math.abs(h(c.land)) > 1e-6 || c.land <= c.T) B('projectile values', p);
+      for (const pt of p.parts) if (pt.type === 'custom') { const r = pt.check(pt.answerTex); if (!r.ok) B('proj own ' + pt.answerTex, p); }
+        else if (pt.type === 'list') { const Y = +pt.label.match(/exactly ([\d.]+)/)[1]; for (const t of pt.answer) if (Math.abs(h(t.value()) - Y) > 1e-6) B('proj list', p); }
+      for (const pt of p.parts) { const m = pt.label.match(/at or above ([\d.]+)/); if (m) { const Y = +m[1]; const dt = Math.sqrt((c.H - Y) / c.g) * 2; if (!pt.check(dt.toFixed(3)).ok) B('proj duration', p); } } }
+    { const p = Ap.circles.generate(L, R(seed, L, 10)), c = p._check;
+      for (const pt of p.parts) {
+        if (pt.type === 'custom') { const t = typedE(pt.answerTex.split('$')[1]); if (!pt.check(t).ok) B('circle own ' + t, p);
+          const exp = `x^2 + y^2 + ${-2 * c.h}x + ${-2 * c.k}y = ${c.r2 - c.h * c.h - c.k * c.k}`; if (pt.check(exp).ok) B('expanded circle accepted', p); }
+        if (pt.type === 'point' && (pt.answer[0].value() !== c.h || pt.answer[1].value() !== c.k)) B('circle center', p);
+        if (pt.type === 'number' && Math.abs(pt.answer.value() ** 2 - c.r2) > 1e-9) B('circle radius', p); }
+      if (c.D !== undefined && (c.D !== -2 * c.h || c.E !== -2 * c.k || c.Fc !== c.h * c.h + c.k * c.k - c.r2)) B('circle general', p); }
+    { const p = Fa.skill.generate(2, R(seed, L, 11), { course: 'accel' });
+      const t = typedE(p.parts[0].answerTex.split('$')[1]); if (!p.parts[0].check(t).ok) B('factoring accel own ' + t, p);
+      const orig = typedE(p.prompt.split('$')[1].replace(/^\;/, '')); if (p.parts[0].check(orig).ok) B('factoring orig accepted ' + orig, p); }
+    if (L === 3) { const p = Fm.factoredFromData.generate(3, R(seed, L, 12));
+      if (p.tag === 'table with fraction inputs') {
+        for (const m of p.visual.matchAll(/<tr><td>\$([^$]+)\$<\/td><td>\$([^$]+)\$<\/td><\/tr>/g)) { const ev = q => new Function('return ' + typedE(q).replace(/\^/g, '**'))(); if (Math.abs(p._check.fn(ev(m[1])) - ev(m[2])) > 1e-9) B('frac table', p); }
+        const [t1, t2] = [p.parts[0].answerTex.split('$')[1], p.parts[0].answerTex.split('$')[3]];
+        for (const t of [t1, t2]) if (!p.parts[0].check(typedE(t)).ok) B('frac table own ' + typedE(t), p); } }
+  }
+  console.log('algebra II chapter 2 check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);

@@ -1,19 +1,22 @@
 // Skill: Factoring quadratics (Algebra II)
-import { randInt, pick, nonzero, parse, evaluate, toTex, gcd } from '../../math.js?v=2.2';
+import { randInt, pick, nonzero, parse, evaluate, toTex, gcd } from '../../math.js?v=2.3';
 
 export const skill = {
   id: 'factoring',
   course: ['accel', 'honors'],
   title: 'Factoring Quadratics',
-  group: 'Factoring',
+  group: { accel: 'Unit 2 - Solving Quadratics', honors: 'Factoring' },
+  lesson: { accel: '2.3' },
   blurb: 'Factor trinomials completely, including special products.',
   levels: {
     1: { name: 'Easy', desc: 'Leading coefficient 1, like x² + 5x + 6' },
     2: { name: 'Medium', desc: 'Prime leading coefficient, plus difference of squares and perfect square trinomials' },
     3: { name: 'Challenging', desc: 'Leading coefficient that is not prime, like 6x² + 7x − 20' },
   },
-  generate(level, rng) {
+  generate(level, rng, ctx = {}) {
     if (level === 1) return monic(rng);
+    // Accelerated also sees two-variable and reversed differences of squares at Medium
+    if (level === 2 && ctx.course === 'accel') return pick(rng, [primeLead, primeLead, diffSquares, perfectSquare, twoVarSquares, reversedSquares])(rng);
     if (level === 2) return pick(rng, [primeLead, primeLead, diffSquares, perfectSquare])(rng);
     return compositeLead(rng);
   },
@@ -165,4 +168,53 @@ function compositeLead(rng) {
     p = nonzero(rng, -9, 9); q = nonzero(rng, -9, 9);
   } while (gcd(m, p) !== 1 || gcd(n, q) !== 1 || m * q + n * p === 0 || Math.abs(p * q) > 72 || (m === n && p === q));
   return grouped(m, p, n, q, 'composite leading coefficient');
+}
+
+// ---------- Accelerated extras: 121x² − 16y² and 49 − 64x² ----------
+function squaresChecker(target, vars, example) {
+  return str => {
+    const s = String(str).replace(/[−–]/g, '-').trim();
+    if (!s) return { ok: false, msg: `Enter the factored form, like ${example}.`, format: true };
+    let tree;
+    try { tree = parse(s); } catch { return { ok: false, msg: `Could not read that. Example: ${example}`, format: true }; }
+    const used = new Set(); (function walk(n) { if (n.v) used.add(n.v); if (n.a) walk(n.a); if (n.b) walk(n.b); })(tree);
+    for (const v of used) if (!vars.includes(v)) return { ok: false, msg: `Use only ${vars.join(' and ')}.`, format: true };
+    const pts = [[-2, 1], [-1, 3], [0, -2], [0.5, 1.5], [1, 2], [2, -1], [3.7, 0.3]];
+    const env = ([x, y]) => (vars.length === 2 ? { x, y } : { x });
+    if (!pts.every(p => { const e = env(p), w = target(e); return Math.abs(evaluate(tree, e) - w) < 1e-6 * Math.max(1, Math.abs(w)); })) return { ok: false };
+    // must be a product of factors, none of them degree two
+    const factors = [];
+    (function flat(n) { if (n.op === 'paren') return flat(n.a); if (n.op === '*') { flat(n.a); flat(n.b); return; } if (n.op === 'neg') return flat(n.a); factors.push(n); })(tree);
+    const xs = factors.filter(n => { const vs = new Set(); (function w(m) { if (m.v) vs.add(m.v); if (m.a) w(m.a); if (m.b) w(m.b); })(n); return vs.size > 0; });
+    if (xs.length < 2) return { ok: false, msg: 'That is equal to the original, but it is not factored yet.' };
+    return { ok: true };
+  };
+}
+
+function twoVarSquares(rng) {
+  let m, n;
+  do { m = randInt(rng, 2, 11); n = randInt(rng, 1, 10); } while (gcd(m, n) !== 1);
+  const A = m * m, C = n * n;
+  const tex = `${A}x^2 - ${C === 1 ? '' : C}y^2`;
+  const ans = `(${m}x - ${n === 1 ? '' : n}y)(${m}x + ${n === 1 ? '' : n}y)`;
+  return {
+    tag: 'difference of squares, two variables',
+    prompt: `Factor completely: $\;${tex}$`,
+    parts: [{ type: 'custom', label: 'Factored form', check: squaresChecker(({ x, y }) => A * x * x - C * y * y, ['x', 'y'], '(3x - 2y)(3x + 2y)'), preview, keys: KEYS, placeholder: 'e.g. (3x - 2y)(3x + 2y)', answerTex: `$${ans}$` }],
+    solution: `Both terms are perfect squares: $${A}x^2 = (${m}x)^2$ and $${C === 1 ? '' : C}y^2 = (${n === 1 ? '' : n}y)^2$. Use $u^2 - v^2 = (u - v)(u + v)$: $\;${ans}$.`,
+  };
+}
+
+function reversedSquares(rng) {
+  let m, n;
+  do { m = randInt(rng, 2, 11); n = randInt(rng, 2, 10); } while (gcd(m, n) !== 1);
+  const C = m * m, A = n * n;                                  // C - A x^2
+  const tex = `${C} - ${A}x^2`;
+  const ans = `(${m} - ${n}x)(${m} + ${n}x)`;
+  return {
+    tag: 'difference of squares, constant first',
+    prompt: `Factor completely: $\;${tex}$`,
+    parts: [{ type: 'custom', label: 'Factored form', check: squaresChecker(({ x }) => C - A * x * x, ['x'], '(7 - 8x)(7 + 8x)'), preview, keys: KEYS, placeholder: 'e.g. (7 - 8x)(7 + 8x)', answerTex: `$${ans}$` }],
+    solution: `The order does not change the pattern: $${C} = ${m}^2$ and $${A}x^2 = (${n}x)^2$, with a minus between them. So $${tex} = ${ans}$. (Writing it as $-(${n}x - ${m})(${n}x + ${m})$ is also correct.)`,
+  };
 }

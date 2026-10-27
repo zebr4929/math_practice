@@ -1,7 +1,7 @@
 // Skills (Algebra II): factored form from a graph or from data, converting between standard and vertex form,
 // maximum/minimum values, and domain and range of quadratics.
-import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex, readNumber, shuffle } from '../../math.js?v=2.2';
-import { seasonFor } from '../precalc/exp-models.js?v=2.2';
+import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex, readNumber, shuffle } from '../../math.js?v=2.3';
+import { seasonFor } from '../precalc/exp-models.js?v=2.3';
 
 // ---------- shared helpers ----------
 const clean = s => String(s).replace(/[−–]/g, '-').replace(/^\s*(y|f\s*\(\s*x\s*\))\s*=\s*/i, '').trim();
@@ -36,7 +36,8 @@ export const factoredFromGraph = {
   id: 'factored-from-graph',
   course: ['accel'],
   title: 'Writing Factored Form from a Graph',
-  group: 'Quadratics: forms and graphs',
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.7',
   blurb: 'Use the x-intercepts and one more point to write y = a(x - r)(x - s).',
   levels: {
     1: { name: 'Easy', desc: 'a = 1 or a = -1' },
@@ -121,7 +122,8 @@ export const toVertexForm = {
   id: 'vertex-form',
   course: ['accel'],
   title: 'Converting Standard Form to Vertex Form',
-  group: 'Quadratics: forms and graphs',
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.8',
   blurb: 'Complete the square to rewrite y = ax² + bx + c as y = a(x - h)² + k.',
   levels: {
     1: { name: 'Easy', desc: 'a = 1 and an even middle coefficient' },
@@ -241,12 +243,13 @@ export const factoredFromData = {
   id: 'factored-from-data',
   course: ['accel'],
   title: 'Writing Factored Form from a Table or Points',
-  group: 'Quadratics: forms and graphs',
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.7',
   blurb: 'Find the zeros in a table or list of points, then use one more point to solve for a.',
   levels: {
     1: { name: 'Easy', desc: 'A table that shows both zeros, a = 1 or a = -1' },
     2: { name: 'Medium', desc: 'Three points, whole-number a' },
-    3: { name: 'Challenging', desc: 'Word problems with a table, or points with a fractional zero' },
+    3: { name: 'Challenging', desc: 'Word problems with a table, fractional zeros, or tables with fraction inputs' },
   },
   now: () => new Date(),
   generate(level, rng) {
@@ -278,8 +281,7 @@ const LAUNCHES = {
 };
 
 function buildFromData(level, rng, date) {
-  if (level === 3 && rng() < 0.55) return storyTable(rng, date);
-  if (level === 3) return fractionalZero(rng);
+  if (level === 3) { const u = rng(); return u < 0.4 ? storyTable(rng, date) : u < 0.7 ? fractionalZero(rng) : fractionTable(rng); }
   const r = randInt(rng, -6, 3), s = r + randInt(rng, 2, 7);
   if (s > 8) return null;
   const a = F(level === 1 ? pick(rng, [1, -1]) : pick(rng, [2, 3, -2, -3, 2, -2]));
@@ -380,7 +382,8 @@ export const vertexToStandard = {
   id: 'standard-form',
   course: ['accel'],
   title: 'Converting Vertex Form to Standard Form',
-  group: 'Quadratics: forms and graphs',
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.8',
   blurb: 'Expand y = a(x - h)² + k into y = ax² + bx + c.',
   levels: {
     1: { name: 'Easy', desc: 'a = 1, like (x - 3)² - 4' },
@@ -490,7 +493,8 @@ export const maxMin = {
   id: 'max-min',
   course: ['accel'],
   title: 'Maximum or Minimum Value',
-  group: 'Quadratics: forms and graphs',
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.6',
   blurb: 'Decide whether a quadratic has a maximum or a minimum, and find that value.',
   levels: {
     1: { name: 'Easy', desc: 'From vertex form' },
@@ -521,7 +525,8 @@ export const domainRange = {
   id: 'domain-range',
   course: ['accel'],
   title: 'Domain and Range of Quadratics',
-  group: 'Quadratics: forms and graphs',
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.6',
   blurb: 'Find the domain and range from the vertex and the direction the parabola opens.',
   levels: maxMin.levels,
   generate(level, rng) {
@@ -562,5 +567,244 @@ export function rangeChecker(up, k) {
     const right = (dir === '>') === up && Math.abs(val - k.value()) < 1e-6;
     if (right && strict) return { ok: false, msg: 'The vertex is on the graph, so its y-value is included. Use ≤ or ≥ (or a square bracket).' };
     return { ok: right };
+  };
+}
+
+// a table with fraction inputs and two fractional zeros, like the 2.7 notes: zeros -11/3 and 2/5, f(0) = 22
+function fractionTable(rng) {
+  const mk = () => { const q = pick(rng, [1, 2, 3, 4, 5]); let p = nonzero(rng, -12, 12); return F(p, q); };
+  const r = mk(), s2 = mk();
+  if (r.isInt() && s2.isInt()) return null;
+  if (r.eq(s2) || r.isZero() || s2.isZero() || Math.abs(r.value()) > 6 || Math.abs(s2.value()) > 6) return null;
+  // f(x) = A (r.d x - r.n)(s.d x - s.n)
+  const A = pick(rng, [1, -1, 2, -2, 3]);
+  const f = x => F(A).mul(F(r.d).mul(x).sub(r.n)).mul(F(s2.d).mul(x).sub(s2.n));
+  const lo = Math.min(r.value(), s2.value()), hi = Math.max(r.value(), s2.value());
+  const extra = [F(-1, 2), F(1, 2), F(-5, 2), F(3, 4), F(-3, 4), F(5, 2), F(-1), F(1), F(2), F(-2), F(9, 2), F(-7, 5)].filter(x => !x.eq(r) && !x.eq(s2));
+  const pickX = [];
+  for (const x of extra.sort(() => rng() - 0.5)) { if (pickX.length < 3) pickX.push(x); }
+  const xs = [r, s2, F(0), ...pickX].sort((a, b) => a.value() - b.value());
+  const ys = xs.map(f);
+  if (ys.some(y => Math.abs(y.value()) > 400 || y.d > 16)) return null;
+  const fn = x => A * (r.d * x - r.n) * (s2.d * x - s2.n);
+  const fac = q => (q.d === 1 ? `\\left(x ${q.sign() > 0 ? '-' : '+'} ${Math.abs(q.n)}\\right)` : `\\left(${q.d}x ${q.n > 0 ? '-' : '+'} ${Math.abs(q.n)}\\right)`);
+  const ans = `y = ${A === 1 ? '' : A === -1 ? '-' : A}${fac(r)}${fac(s2)}`;
+  const f0 = ys[xs.findIndex(x => x.isZero())];
+  const a = f0.div(r.mul(s2));
+  const visual = `<table class="seq-table"><tr><th>$x$</th><th>$f(x)$</th></tr>${xs.map((x, i) => `<tr><td>$${x.tex()}$</td><td>$${ys[i].tex()}$</td></tr>`).join('')}</table>`;
+  return {
+    tag: 'table with fraction inputs',
+    prompt: 'Write a quadratic function in factored form that represents the table.',
+    visual,
+    parts: [{ type: 'custom', label: '$f(x) =$', check: factoredChecker(fn, 'y = 2(x + 2)(2x - 3)'), preview, keys: ['(', ')', '/'], placeholder: 'e.g. 2(x + 2)(2x - 3)', answerTex: `$${ans}$, or $y = ${aCoefTex(a)}${rootFactor(r)}${rootFactor(s2)}$`, help: 'Factors with fractions, like (x - 2/5), are fine.' }],
+    solution: `The zeros are where $f(x) = 0$: $x = ${r.tex()}$ and $x = ${s2.tex()}$. So $f(x) = a${rootFactor(r)}${rootFactor(s2)}$.<br>`
+      + `Use $f(0) = ${f0.tex()}$: $${f0.tex()} = a\\left(0 ${r.sign() > 0 ? '-' : '+'} ${tfr(r.abs())}\\right)\\left(0 ${s2.sign() > 0 ? '-' : '+'} ${tfr(s2.abs())}\\right) = a\\cdot ${r.mul(s2).sign() < 0 ? `\\left(${r.mul(s2).tex()}\\right)` : r.mul(s2).tex()}$, so $a = ${a.tex()}$.<br>`
+      + `So $f(x) = ${aCoefTex(a)}${rootFactor(r)}${rootFactor(s2)}$. Clearing the fractions inside the factors gives $${ans.slice(4)}$.`,
+    _check: { fn },
+  };
+}
+
+// ================= Finding b or c from the solutions (2.7) =================
+export const coefFromSolutions = {
+  id: 'coef-from-solutions',
+  course: ['accel'],
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.7',
+  title: 'Finding Coefficients from the Solutions',
+  blurb: 'Use the solutions (zeros) to rebuild the equation and find a missing coefficient.',
+  levels: {
+    1: { name: 'Easy', desc: 'x² + bx + c = 0 with both solutions given: find b or c' },
+    2: { name: 'Medium', desc: 'A leading coefficient other than 1, fractional solutions: find b and c' },
+    3: { name: 'Challenging', desc: 'Only one solution given: find the coefficient and the other solution' },
+  },
+  generate(level, rng) {
+    for (let t = 0; t < 300; t++) { const p = buildCoef(level, rng); if (p) return p; }
+    throw new Error('coef-from-solutions: could not build');
+  },
+};
+
+function buildCoef(level, rng) {
+  const steps = [];
+  if (level === 1) {
+    const r = nonzero(rng, -10, 10), s2 = nonzero(rng, -10, 10);
+    if (r === s2) return null;
+    const b = -(r + s2), c = r * s2;
+    const findB = rng() < 0.6;
+    const eq = findB ? `x^2 + bx ${c < 0 ? '-' : '+'} ${Math.abs(c)} = 0` : `x^2 ${b < 0 ? '-' : '+'} ${Math.abs(b)}x + c = 0`;
+    steps.push(`Solutions $${r}$ and $${s2}$ come from the factors $${linTex(r)}${linTex(s2)}$.`);
+    steps.push(`Multiply: $${linTex(r)}${linTex(s2)} = ${polyTex(F(1), F(b), F(c))}$.`);
+    steps.push(findB ? `Match the middle term: $b = ${b}$.` : `Match the constant: $c = ${c}$.`);
+    if (b === 0 && findB) return null;
+    return {
+      tag: findB ? 'find b' : 'find c',
+      prompt: `The quadratic equation $${eq}$ has solutions $x = ${r}$ and $x = ${s2}$. What is the value of $${findB ? 'b' : 'c'}$?`,
+      parts: [{ type: 'number', label: `$${findB ? 'b' : 'c'} =$`, answer: F(findB ? b : c) }],
+      solution: steps.join('<br>'), _check: { r, s: s2, b, c },
+    };
+  }
+  if (level === 2) {
+    // a x^2 + b x + c = 0 with solutions p/a1 and q
+    const a = pick(rng, [2, 3, 4, 5, 6]);
+    const num = nonzero(rng, -7, 7);
+    const r = F(num, a), s2 = F(nonzero(rng, -6, 6));
+    if (r.isInt() || r.eq(s2)) return null;
+    // a(x - r)(x - s)
+    const b = F(a).mul(r.add(s2)).neg(), c = F(a).mul(r).mul(s2);
+    if (!b.isInt() || !c.isInt()) return null;
+    steps.push(`Solutions $${r.tex()}$ and $${s2.tex()}$ come from $a${rootFactor(r)}${rootFactor(s2)}$ with $a = ${a}$.`);
+    steps.push(`Multiply: $${a}${rootFactor(r)}${rootFactor(s2)} = ${polyTex(F(a), b, c)}$.`);
+    steps.push(`So $b = ${b.tex()}$ and $c = ${c.tex()}$.`);
+    return {
+      tag: 'find b and c',
+      prompt: `The equation $${a}x^2 + bx + c = 0$ has solutions $x = ${r.tex()}$ and $x = ${s2.tex()}$. Find $b$ and $c$.`,
+      parts: [{ type: 'number', label: '$b =$', answer: b }, { type: 'number', label: '$c =$', answer: c }],
+      solution: steps.join('<br>'), _check: { a, r: r.value(), s: s2.value(), b: b.value(), c: c.value() },
+    };
+  }
+  // one solution given: x^2 + b x + c = 0 with c known, solution r -> other = c / r, b = -(r + other)
+  const r = nonzero(rng, -9, 9), other = nonzero(rng, -9, 9);
+  if (r === other) return null;
+  const b = -(r + other), c = r * other;
+  if (b === 0) return null;
+  const findB = rng() < 0.6;
+  const eq = findB ? `x^2 + bx ${c < 0 ? '-' : '+'} ${Math.abs(c)} = 0` : `x^2 ${b < 0 ? '-' : '+'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}x + c = 0`;
+  if (findB) {
+    steps.push(`Substitute the solution $x = ${r}$: $${r < 0 ? `(${r})` : r}^2 + b(${r}) ${c < 0 ? '-' : '+'} ${Math.abs(c)} = 0$, so $${r * r} ${r < 0 ? '-' : '+'} ${Math.abs(r) === 1 ? '' : Math.abs(r)}b ${c < 0 ? '-' : '+'} ${Math.abs(c)} = 0$ and $b = ${b}$.`);
+    steps.push(`Now factor $${polyTex(F(1), F(b), F(c))} = ${linTex(r)}${linTex(other)}$: the other solution is $x = ${other}$.`);
+  } else {
+    steps.push(`Substitute the solution $x = ${r}$: $${r < 0 ? `(${r})` : r}^2 ${b < 0 ? '-' : '+'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}(${r}) + c = 0$, so $${r * r + b * r} + c = 0$ and $c = ${c}$.`);
+    steps.push(`Now factor $${polyTex(F(1), F(b), F(c))} = ${linTex(r)}${linTex(other)}$: the other solution is $x = ${other}$.`);
+  }
+  return {
+    tag: findB ? 'one solution, find b' : 'one solution, find c',
+    prompt: `One solution of $${eq}$ is $x = ${r}$. Find $${findB ? 'b' : 'c'}$ and the other solution.`,
+    parts: [{ type: 'number', label: `$${findB ? 'b' : 'c'} =$`, answer: F(findB ? b : c) }, { type: 'number', label: 'Other solution: $x =$', answer: F(other) }],
+    solution: steps.join('<br>'), _check: { r, other, b, c },
+  };
+}
+
+// ================= Vertex form from the vertex and one point (2.8) =================
+export const vertexFromPoint = {
+  id: 'vertex-form-from-point',
+  course: ['accel'],
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.8',
+  title: 'Writing Vertex Form from the Vertex and a Point',
+  blurb: 'Put the vertex into y = a(x - h)² + k, then use the other point to solve for a.',
+  levels: {
+    1: { name: 'Easy', desc: 'a = 1 or a = -1' },
+    2: { name: 'Medium', desc: 'Whole-number a, positive or negative' },
+    3: { name: 'Challenging', desc: 'Fractional a' },
+  },
+  generate(level, rng) {
+    for (let t = 0; t < 300; t++) {
+      const a = level === 1 ? F(pick(rng, [1, -1])) : level === 2 ? F(pick(rng, [2, 3, 4, -2, -3, -4, 5])) : pick(rng, [F(1, 2), F(-1, 2), F(1, 3), F(-2, 3), F(3, 2), F(-1, 4), F(3, 4), F(-3, 2)]);
+      const h = F(randInt(rng, -6, 6)), k = F(randInt(rng, -9, 9));
+      if (h.isZero() && k.isZero()) continue;
+      const dx = nonzero(rng, -5, 5);
+      const x = h.add(dx), y = a.mul(dx * dx).add(k);
+      if (!y.isInt() || Math.abs(y.n) > 60) continue;
+      const fn = t2 => a.value() * (t2 - h.value()) ** 2 + k.value();
+      const ans = `y = ${vertexTex(a, h, k)}`;
+      const check = str => {
+        const R = readExpr(str);
+        if (R.error) return { ok: false, msg: R.error, format: true };
+        if (!sameFn(R.tree, fn)) return { ok: false };
+        if (!isVertexForm(R.tree)) return { ok: false, msg: 'That is equal, but write it in vertex form: y = a(x - h)^2 + k.' };
+        return { ok: true };
+      };
+      const hT = h.isZero() ? 'x' : `\\left(x ${h.sign() > 0 ? '-' : '+'} ${h.abs().tex()}\\right)`;
+      return {
+        tag: level === 1 ? 'a = ±1' : level === 2 ? 'whole-number a' : 'fractional a',
+        prompt: `Write a quadratic function in vertex form for a parabola with vertex $(${h.tex()}, ${k.tex()})$ that passes through the point $(${x.tex()}, ${y.tex()})$.`,
+        parts: [{ type: 'custom', label: '$y =$', check, preview, keys: ['(', ')', '^2', '/'], placeholder: 'e.g. 2(x - 2)^2 - 3', answerTex: `$${ans}$`, help: level === 3 ? 'For a fraction, type it like 1/2(x - 2)^2 - 3.' : '' }],
+        solution: `The vertex gives $h = ${h.tex()}$ and $k = ${k.tex()}$: $y = a${hT}^2 ${k.sign() < 0 ? '-' : '+'} ${k.abs().tex()}$. Only $a$ is unknown.<br>`
+          + `Substitute $(${x.tex()}, ${y.tex()})$: $${y.tex()} = a\\left(${x.tex()} ${h.sign() < 0 ? '+' : '-'} ${h.abs().tex()}\\right)^2 ${k.sign() < 0 ? '-' : '+'} ${k.abs().tex()} = ${dx * dx}a ${k.sign() < 0 ? '-' : '+'} ${k.abs().tex()}$.<br>`
+          + `So $${dx * dx}a = ${y.sub(k).tex()}$ and $a = ${a.tex()}$. Equation: $${ans}$.`,
+        _check: { a: a.value(), h: h.value(), k: k.value(), x: x.value(), y: y.value(), fn },
+      };
+    }
+    throw new Error('vertex-form-from-point: could not build');
+  },
+};
+
+// ================= Intervals of increasing and decreasing (2.8) =================
+export const incDec = {
+  id: 'increasing-decreasing',
+  course: ['accel'],
+  group: 'Unit 2 - Quadratic Functions and Graphs',
+  lesson: '2.8',
+  title: 'Intervals of Increasing and Decreasing',
+  blurb: 'Use the vertex and the direction the parabola opens to find where it increases and decreases.',
+  levels: {
+    1: { name: 'Easy', desc: 'From a graph' },
+    2: { name: 'Medium', desc: 'From vertex form' },
+    3: { name: 'Challenging', desc: 'From standard form, including fractional vertices' },
+  },
+  generate(level, rng) {
+    for (let t = 0; t < 300; t++) {
+      let a, h, k, eq = '', displayGraph;
+      if (level === 3) {
+        a = F(pick(rng, [1, -1, 2, -2, 3, -3]));
+        h = rng() < 0.5 ? F(pick(rng, [-7, -5, -3, -1, 1, 3, 5, 7]), 2) : F(nonzero(rng, -5, 5));
+        const b = a.mul(h).mul(-2), c = F(randInt(rng, -9, 9));
+        if (!b.isInt()) continue;
+        k = c.sub(a.mul(h.mul(h)));
+        eq = `y = ${polyTex(a, b, c)}`;
+      } else {
+        a = level === 1 ? F(pick(rng, [1, -1, 2, -2])) : pick(rng, [F(1), F(-1), F(2), F(-3), F(1, 2), F(-1, 2), F(3)]);
+        h = F(randInt(rng, -5, 5)); k = F(randInt(rng, -6, 6));
+        eq = `y = ${vertexTex(a, h, k)}`;
+      }
+      const up = a.sign() > 0;
+      const fn = x => a.value() * (x - h.value()) ** 2 + k.value();
+      if (level === 1) {
+        const ys = [-3, 0, 3].map(d => fn(h.value() + d));
+        const ymin = Math.floor(Math.min(...ys, k.value())) - 1, ymax = Math.ceil(Math.max(...ys, k.value())) + 1;
+        if (ymax - ymin > 24) continue;
+        displayGraph = { window: { xmin: Math.min(-1, h.value() - 5), xmax: Math.max(1, h.value() + 5), ymin: Math.min(ymin, -1), ymax: Math.max(ymax, 1) }, fn, labels: [{ x: h.value(), y: k.value(), text: '' }] };
+      }
+      const hv = h.value(), ht = h.tex();
+      const incI = up ? [hv, Infinity] : [-Infinity, hv], decI = up ? [-Infinity, hv] : [hv, Infinity];
+      const show = I => (I[0] === -Infinity ? `(-\\infty,\\ ${ht})` : `(${ht},\\ \\infty)`);
+      const steps = [];
+      if (level === 1) steps.push(`From the graph, the vertex is at $x = ${ht}$, and the parabola opens ${up ? 'up' : 'down'}.`);
+      else if (level === 2) steps.push(`In vertex form the vertex is $(${ht}, ${k.tex()})$, and $a = ${a.tex()}$ ${up ? 'is positive, so it opens up' : 'is negative, so it opens down'}.`);
+      else steps.push(`The vertex is at $x = -\\dfrac{b}{2a} = ${ht}$, and $a = ${a.tex()}$ ${up ? 'is positive, so it opens up' : 'is negative, so it opens down'}.`);
+      steps.push(up ? `Reading left to right, the graph goes down until $x = ${ht}$, then up. Decreasing on $${show(decI)}$, increasing on $${show(incI)}$.`
+        : `Reading left to right, the graph goes up until $x = ${ht}$, then down. Increasing on $${show(incI)}$, decreasing on $${show(decI)}$.`);
+      steps.push('Intervals describe $x$-values, and the vertex itself is where the graph turns.');
+      const mk = (I, word) => ({ type: 'custom', label: `${word} on:`, check: xIntervalChecker(I), keys: ['(', ')', '∞', '-', ','], placeholder: 'e.g. (-∞, 3)', answerTex: `$${show(I)}$`, help: 'Use interval notation like (-∞, 3) or (3, ∞), or an inequality like x < 3.' });
+      return {
+        tag: level === 1 ? 'from a graph' : level === 2 ? 'vertex form' : 'standard form',
+        prompt: level === 1 ? 'The graph of a quadratic function is shown. Find the intervals where it is increasing and decreasing.' : `Find the intervals where $${eq}$ is increasing and decreasing.`,
+        displayGraph,
+        parts: [mk(incI, 'Increasing'), mk(decI, 'Decreasing')],
+        solution: steps.join('<br>'),
+        _check: { a: a.value(), h: hv, k: k.value(), up, eq },
+      };
+    }
+    throw new Error('increasing-decreasing: could not build');
+  },
+};
+
+// accepts (-∞, 3), (3, ∞), x < 3, x > 3, -∞ < x < 3; square brackets at the vertex are accepted too
+export function xIntervalChecker([lo, hi]) {
+  return str => {
+    const s = String(str).replace(/[−–]/g, '-').replace(/≤|=</g, '<=').replace(/≥|=>/g, '>=').replace(/∞|infinity/gi, 'inf').replace(/\s+/g, '').toLowerCase();
+    if (!s) return { ok: false, msg: 'Enter an interval, like (-∞, 3).', format: true };
+    const num = t => { if (/^\+?inf$/.test(t)) return Infinity; if (t === '-inf') return -Infinity; const r = readNumber(t); return r.error ? null : r.value; };
+    let L, H, m;
+    if ((m = s.match(/^([\[(])(.+),(.+)([\])])$/))) { L = num(m[2]); H = num(m[3]); }
+    else if ((m = s.match(/^-inf(<=|<)x(<=|<)(.+)$/))) { L = -Infinity; H = num(m[3]); }
+    else if ((m = s.match(/^(.+?)(<=|<)x(<=|<)\+?inf$/))) { L = num(m[1]); H = Infinity; }
+    else if ((m = s.match(/^x(<=|<)(.+)$/))) { L = -Infinity; H = num(m[2]); }
+    else if ((m = s.match(/^(.+?)(>=|>)x$/))) { L = -Infinity; H = num(m[1]); }
+    else if ((m = s.match(/^x(>=|>)(.+)$/))) { L = num(m[2]); H = Infinity; }
+    else if ((m = s.match(/^(.+?)(<=|<)x$/))) { L = num(m[1]); H = Infinity; }
+    else return { ok: false, msg: 'Use interval notation like (-∞, 3), or an inequality like x < 3.', format: true };
+    if (L === null || H === null || L === undefined || H === undefined) return { ok: false, msg: 'Could not read a number in that interval.', format: true };
+    const eq = (u, v) => u === v || (isFinite(u) && isFinite(v) && Math.abs(u - v) < 1e-9);
+    return { ok: eq(L, lo) && eq(H, hi) };
   };
 }

@@ -41,6 +41,16 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | Accelerated | Converting Vertex Form to Standard Form | a = 1 | Whole-number a | Fractional a |
 | Accelerated | Maximum or Minimum Value | From vertex form | Standard form, whole numbers | Standard form, fractions |
 | Accelerated | Domain and Range of Quadratics | From vertex form | Standard form, whole numbers | Standard form, fractions |
+| Accelerated | 2.1 Square Roots of Negative Numbers | Perfect squares | Simplify the radical | Combine with other terms |
+| Accelerated | 2.1 Powers of i | One power | Products | Sums and differences |
+| Accelerated | 2.2 Operations with Complex Numbers | Add and subtract | Multiply, conjugates | Divide |
+| Accelerated | 2.4 Completing a Perfect Square Trinomial | Even b | Odd b | Fractional b |
+| Accelerated | 2.5 The Discriminant | Standard form | Rearrange first | Find k (one real / two complex) |
+| Accelerated | 2.7 Finding Coefficients from the Solutions | Find b or c | a other than 1, find b and c | One solution given |
+| Accelerated | 2.8 Writing Vertex Form from the Vertex and a Point | a = ±1 | Whole-number a | Fractional a |
+| Accelerated | 2.8 Intervals of Increasing and Decreasing | From a graph | Vertex form | Standard form |
+| Accelerated | 2.9 Projectile Problems | Start and maximum | Maximum and landing | Landing (formula) and heights |
+| Accelerated | 2.10 Equations of Circles | From center and radius | Read center/radius, graphs, tangent | Complete the square |
 
 ## Files
 
@@ -61,3 +71,5 @@ Seasonal word problems: the exponential models skill picks its stories by date. 
 Home page sections (AP Precalculus): each skill file sets `group` (the section) and `lesson` (the AP topic number shown on the card). In `js/config.js`, `collapsible: true` turns on the open/close sections for a course, and `openSections` lists the sections that start open for students who have not opened or closed any yet. Update it as the year moves on.
 
 Calculator answers (2.5 percent and units problems) accept values rounded or truncated to 3 decimal places.
+
+Accelerated Algebra II uses the same open/close sections (Unit 2 - Complex Numbers, Solving Quadratics, Quadratic Functions and Graphs, Applications and Circles). Skills shared with Honors set `group` and `lesson` per course, like `group: { accel: '...', honors: '...' }`, so the Honors page is unchanged. Factoring Quadratics shows Accelerated students two extra Medium patterns (121x² − 16y² and 49 − 64x²).

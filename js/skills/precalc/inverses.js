@@ -1,5 +1,5 @@
 // AP Precalculus 2.8: inverse functions from a table, from a graph, and algebraically.
-import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=2.2';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=2.3';
 
 const GROUP = 'Unit 2 - Inverses and Composition';
 const isInt = v => Number.isInteger(v);

@@ -1,10 +1,10 @@
 // Solving quadratics: square roots, factoring, completing the square, quadratic formula,
 // plus simplifying radicals. Honors versions never produce imaginary answers.
-import { F, Frac, randInt, pick, nonzero, gcd } from '../../math.js?v=2.2';
+import { F, Frac, randInt, pick, nonzero, gcd } from '../../math.js?v=2.3';
 import {
   exactRoots, rootsTex, solutionChecker, solutionsPreview, splitSquare, eqTex, sideTex, arrange,
   SOLVE_KEYS, SOLVE_KEYS_REAL, simplifyIssue, readSolutions,
-} from './solveutil.js?v=2.2';
+} from './solveutil.js?v=2.3';
 
 const LIST_HELP = 'Separate solutions with commas, or use ± (type +-). Type sqrt for √.';
 const lin = (m, p) => `(${m === 1 ? '' : m === -1 ? '-' : m}x ${p < 0 ? '-' : '+'} ${Math.abs(p)})`;   // (mx + p)
@@ -120,7 +120,8 @@ export const solveFactoring = {
   id: 'solve-factoring',
   course: ['accel', 'honors'],
   title: 'Solving Quadratics by Factoring',
-  group: 'Solving quadratics',
+  group: { accel: 'Unit 2 - Solving Quadratics', honors: 'Solving quadratics' },
+  lesson: { accel: '2.3' },
   blurb: 'Get 0 on one side, factor, then set each factor equal to 0.',
   levels: {
     1: { name: 'Easy', desc: 'x² + bx + c = 0' },
@@ -172,7 +173,8 @@ function ctsSkill(variant) {
     id: 'solve-cts-' + variant,
     course: [variant],
     title: 'Solving Quadratics by Completing the Square',
-    group: 'Solving quadratics',
+    group: imag ? 'Unit 2 - Solving Quadratics' : 'Solving quadratics',
+    lesson: imag ? '2.4' : undefined,
     blurb: imag ? 'Complete the square, then take square roots. Some answers are imaginary.' : 'Complete the square, then take square roots.',
     levels: {
       1: { name: 'Easy', desc: 'x² + bx + c = 0 with an even b' },
@@ -240,7 +242,8 @@ function formulaSkill(variant) {
     id: 'solve-formula-' + variant,
     course: [variant],
     title: 'Solving Quadratics with the Quadratic Formula',
-    group: 'Solving quadratics',
+    group: imag ? 'Unit 2 - Solving Quadratics' : 'Solving quadratics',
+    lesson: imag ? '2.5' : undefined,
     blurb: imag ? 'Use the formula, simplify the radical, then reduce. Some answers are imaginary.' : 'Use the formula, simplify the radical, then reduce.',
     levels: {
       1: { name: 'Easy', desc: 'a = 1, already set equal to 0' },

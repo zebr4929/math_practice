@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=2.2';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.2';
-import { CONFIG } from './config.js?v=2.2';
-import { makeGrid, makeLogGrid } from './graph.js?v=2.2';
+import { SKILLS, byId } from './skills/index.js?v=2.3';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.3';
+import { CONFIG } from './config.js?v=2.3';
+import { makeGrid, makeLogGrid } from './graph.js?v=2.3';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -91,13 +91,17 @@ function signIn() {
 
 // ---------- home ----------
 // (function declarations, because route() runs before the rest of this file is evaluated)
-function lessonKey(s) { return s.lesson ? s.lesson.split(/[^\d.]/)[0].split('.').map(Number) : [999]; }
+// a skill's group and lesson can be one value, or an object with one value per course ({ accel: '2.3' })
+function perCourse(v) { return v && typeof v === 'object' ? v[courseOf(student)?.skills] : v; }
+function groupOf(s) { return perCourse(s.group) || 'Other'; }
+function lessonOf(s) { return perCourse(s.lesson) || ''; }
+function lessonKey(s) { const l = lessonOf(s); return l ? l.split(/[^\d.]/)[0].split('.').map(Number) : [999]; }
 function byLesson(a, b) { const x = lessonKey(a), y = lessonKey(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); }
 
 function skillCard(s, best) {
   return `
         <div class="card skill">
-          <div><h2>${s.lesson ? `<span class="lesson">${esc(s.lesson)}</span>` : ''}${esc(s.title)}</h2><p class="muted">${esc(s.blurb)}</p></div>
+          <div><h2>${lessonOf(s) ? `<span class="lesson">${esc(lessonOf(s))}</span>` : ''}${esc(s.title)}</h2><p class="muted">${esc(s.blurb)}</p></div>
           <div class="levels">
             ${[1, 2, 3].map(L => {
               const b = best[`${s.id}.${L}`];
@@ -114,7 +118,7 @@ function skillCard(s, best) {
 function home() {
   const best = store.get('pp.best', {});
   const list = mySkills();
-  const groups = [...new Set(list.map(s => s.group))];
+  let groups = [...new Set(list.map(groupOf))];
   const course = courseOf(student);
   const intro = `
     <div class="crumb muted">${esc(student.course)}</div>
@@ -123,15 +127,18 @@ function home() {
   if (!course?.collapsible) {
     app.innerHTML = intro + groups.map(g => `
       <div class="group-title">${esc(g)}</div>
-      ${list.filter(s => s.group === g).map(s => skillCard(s, best)).join('')}`).join('');
+      ${list.filter(s => groupOf(s) === g).map(s => skillCard(s, best)).join('')}`).join('');
     window.scrollTo(0, 0);
     return;
   }
   // collapsible sections: open the teacher's current section(s) by default, then remember each student's choices
+  // sections in lesson order
+  const firstLesson = g => list.filter(s => groupOf(s) === g).map(lessonKey).sort((x, y) => (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)))[0];
+  groups = groups.sort((a, b) => { const x = firstLesson(a), y = firstLesson(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); });
   const openKey = 'pp.open.' + course.skills;
   const open = new Set(store.get(openKey, course.openSections || []));
   app.innerHTML = intro + groups.map(g => {
-    const items = list.filter(s => s.group === g).sort(byLesson);
+    const items = list.filter(s => groupOf(s) === g).sort(byLesson);
     return `
       <details class="section" data-group="${esc(g)}" ${open.has(g) ? 'open' : ''}>
         <summary><span class="sec-title">${esc(g)}</span><span class="sec-count">${items.length} skill${items.length === 1 ? '' : 's'}</span></summary>
@@ -153,7 +160,7 @@ function startSet(skill, level) {
   const seen = new Set();
   let guard = 0;
   while (problems.length < SET_SIZE && guard++ < 200) {
-    const p = skill.generate(level, rng);
+    const p = skill.generate(level, rng, { course: courseOf(student)?.skills });
     // prompts can share wording (e.g. "Graph the parabola"), so compare the underlying problem too
     const key = p.prompt + JSON.stringify(p._check || {}) + JSON.stringify(p.displayGraph?.labels || []);
     if (seen.has(key)) continue;
@@ -187,6 +194,7 @@ function showProblem(state) {
     const dg = p.displayGraph, gr = makeGrid({ ...dg.window, interactive: false });
     if (dg.asymptote !== undefined) gr.asymptote(dg.asymptote);
     if (dg.fn) gr.curve(dg.fn);
+    for (const f of dg.fns || []) gr.curve(f);
     for (const l of dg.labels || []) gr.label(l.x, l.y, l.text);
     document.getElementById('dgraph').appendChild(gr.root);
   }

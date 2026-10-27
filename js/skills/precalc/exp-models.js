@@ -1,7 +1,7 @@
 // AP Precalculus, Unit 2:
 //  1. Exponential models from geometric-sequence information, in seasonal word problems.
 //  2. Rewriting exponential functions in y = a·b^x form with exponent laws.
-import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.2';
+import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.3';
 
 // ================================================================
 // Seasonal contexts
