@@ -1,8 +1,8 @@
 // Accelerated Algebra II, 2.9 and 2.10:
 //  1. Projectile problems (initial height, maximum, hitting the ground, time above a height)
 //  2. Equations of circles
-import { F, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=2.3';
-import { decimalChecker } from '../precalc/exp-data.js?v=2.3';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=2.4';
+import { decimalChecker } from '../precalc/exp-data.js?v=2.4';
 
 const GROUP = 'Unit 2 - Applications and Circles';
 const num = v => String(+v.toFixed(4));                          // 58.80000001 -> 58.8

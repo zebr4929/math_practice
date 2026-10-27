@@ -73,3 +73,5 @@ Home page sections (AP Precalculus): each skill file sets `group` (the section) 
 Calculator answers (2.5 percent and units problems) accept values rounded or truncated to 3 decimal places.
 
 Accelerated Algebra II uses the same open/close sections (Unit 2 - Complex Numbers, Solving Quadratics, Quadratic Functions and Graphs, Applications and Circles). Skills shared with Honors set `group` and `lesson` per course, like `group: { accel: '...', honors: '...' }`, so the Honors page is unchanged. Factoring Quadratics shows Accelerated students two extra Medium patterns (121x² − 16y² and 49 − 64x²).
+
+"Show me how": every problem has a button that reveals the answer and worked solution without grading. Those problems count as neither right nor wrong: the score is out of the problems actually attempted, and the Sheet's Status column notes it, like "Completed (2 solutions viewed)".

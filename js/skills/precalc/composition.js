@@ -2,7 +2,7 @@
 //  1. Composition as a simplified expression, like g(f(x)) or (k∘p)(x).
 //  2. Evaluating compositions when the functions come as a graph, a table, a formula,
 //     a piecewise rule and a verbal description.
-import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=2.3';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=2.4';
 
 const GROUP = 'Unit 2 - Inverses and Composition';
 

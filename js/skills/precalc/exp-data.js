@@ -1,7 +1,7 @@
 // AP Precalculus 2.5: exponential context and data modeling.
 //  1. Data from a vertically shifted exponential: find k, then write y = ab^x + k.
 //  2. Percent growth/decay word problems where the units change (years to months, hours to minutes, ...).
-import { F, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=2.3';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex } from '../../math.js?v=2.4';
 
 const GROUP = 'Unit 2 - Sequences and Exponentials';
 

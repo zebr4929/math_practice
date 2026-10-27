@@ -1,7 +1,7 @@
 // Skills (Algebra II): factored form from a graph or from data, converting between standard and vertex form,
 // maximum/minimum values, and domain and range of quadratics.
-import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex, readNumber, shuffle } from '../../math.js?v=2.3';
-import { seasonFor } from '../precalc/exp-models.js?v=2.3';
+import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex, readNumber, shuffle } from '../../math.js?v=2.4';
+import { seasonFor } from '../precalc/exp-models.js?v=2.4';
 
 // ---------- shared helpers ----------
 const clean = s => String(s).replace(/[−–]/g, '-').replace(/^\s*(y|f\s*\(\s*x\s*\))\s*=\s*/i, '').trim();

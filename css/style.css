@@ -96,6 +96,10 @@ input[type=text]:focus, select:focus { outline: none; border-color: var(--maroon
 .dot.cur { background: var(--gold); }
 .dot.right { background: var(--teal); }
 .dot.wrong { background: var(--maroon); }
+.dot.skipped { background: #fff; box-shadow: inset 0 0 0 2px var(--grey); }
+.part.shown { border-left: 3px solid var(--gold); padding-left: 12px; }
+.mark-shown { font-weight: 700; color: var(--maroon-dark); }
+.reveal-note { font-size: .85rem; margin-top: 8px; }
 .prompt { font-size: 1.12rem; margin-bottom: 12px; }
 .visual { margin: 6px 0 14px; overflow-x: auto; }
 .part { margin: 14px 0; }

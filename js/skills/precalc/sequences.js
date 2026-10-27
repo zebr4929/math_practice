@@ -1,5 +1,5 @@
 // Skills: arithmetic and geometric sequence rules (Lesson 2.1)
-import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=2.3';
+import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=2.4';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'Write the rule from the first few terms' },

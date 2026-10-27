@@ -1,8 +1,8 @@
 // Accelerated Algebra II, 2.4 and 2.5:
 //  1. Completing a perfect square trinomial (find c, write the binomial squared)
 //  2. The discriminant: number and type of solutions, and finding k
-import { F, randInt, pick, nonzero, parse, evaluate, toTex, checkList, gcd } from '../../math.js?v=2.3';
-import { readComplex, splitSquare } from './solveutil.js?v=2.3';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex, checkList, gcd } from '../../math.js?v=2.4';
+import { readComplex, splitSquare } from './solveutil.js?v=2.4';
 
 const GROUP = 'Unit 2 - Solving Quadratics';
 const tfr = f => (f.isInt() ? String(Math.abs(f.n)) : `\\tfrac{${Math.abs(f.n)}}{${f.d}}`);

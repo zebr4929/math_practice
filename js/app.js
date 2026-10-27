@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=2.3';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.3';
-import { CONFIG } from './config.js?v=2.3';
-import { makeGrid, makeLogGrid } from './graph.js?v=2.3';
+import { SKILLS, byId } from './skills/index.js?v=2.4';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.4';
+import { CONFIG } from './config.js?v=2.4';
+import { makeGrid, makeLogGrid } from './graph.js?v=2.4';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -174,7 +174,7 @@ function startSet(skill, level) {
 function showProblem(state) {
   const { skill, level, problems, i } = state;
   const p = problems[i];
-  const dots = problems.map((_, k) => `<span class="dot ${k < state.results.length ? (state.results[k] ? 'right' : 'wrong') : k === i ? 'cur' : ''}"></span>`).join('');
+  const dots = problems.map((_, k) => `<span class="dot ${k < state.results.length ? (state.results[k] === 'skip' ? 'skipped' : state.results[k] ? 'right' : 'wrong') : k === i ? 'cur' : ''}"></span>`).join('');
   app.innerHTML = `
     <div class="practice-head">
       <div><div class="crumb"><a href="#/">All skills</a> / ${esc(skill.title)}</div>
@@ -187,7 +187,8 @@ function showProblem(state) {
       ${p.displayGraph ? `<div class="visual" id="dgraph"></div>` : ''}
       <div id="parts">${p.parts.map((part, k) => partHtml(part, k)).join('')}</div>
       <div id="sol"></div>
-      <div class="actions" id="acts"><button class="btn" id="check">Check answer</button></div>
+      <div class="actions" id="acts"><button class="btn" id="check">Check answer</button><button class="btn secondary" id="reveal" title="See the answer and worked solution. This problem will not count for or against you.">Show me how</button></div>
+      <div class="reveal-note muted" id="revealNote">Stuck? "Show me how" shows the answer and worked solution. It does not count as right or wrong.</div>
     </div>`;
   const card = document.getElementById('pcard');
   if (p.displayGraph) {
@@ -241,6 +242,7 @@ function showProblem(state) {
   });
   state.checked = false;
   document.getElementById('check').onclick = () => check(state);
+  document.getElementById('reveal').onclick = () => reveal(state);
   typeset(card);
   card.querySelector('input')?.focus({ preventScroll: true });
   window.scrollTo(0, 0);
@@ -322,8 +324,33 @@ function check(state) {
       ? `<span class="mark-ok">✓ Correct</span>`
       : `<span class="mark-no">✗ Not quite.</span> ${r.msg ? `<span>${esc(r.msg)}</span> ` : ''}<span class="muted">Correct answer: ${answerTex(part)}</span>`;
   });
+  afterAnswer(state, allOk);
+}
+
+// "Show me how": reveal the answers and the worked solution without grading. The problem is
+// recorded as 'skip', which counts as neither right nor wrong.
+function reveal(state) {
+  if (state.checked) return;
+  const p = state.problems[state.i];
+  const card = document.getElementById('pcard');
+  state.checked = true;
+  p.parts.forEach((part, k) => {
+    const box = card.querySelector(`[data-part="${k}"]`);
+    box.classList.add('shown');
+    box.querySelectorAll('input').forEach(i => { i.readOnly = true; });
+    if (part.type === 'mc') box.querySelector(`[data-choice="${part.answer}"]`).classList.add('correct');
+    if (part.type === 'graph') state.grids[k].reveal({ fn: part.fn, correct: part.correct });
+    box.querySelector('.fb').innerHTML = `<span class="mark-shown">Answer:</span> <span>${answerTex(part)}</span>`;
+  });
+  afterAnswer(state, 'skip');
+}
+
+function afterAnswer(state, result) {
+  const p = state.problems[state.i];
+  const card = document.getElementById('pcard');
   document.getElementById('sol').innerHTML = `<div class="solution"><h3>Worked solution</h3>${p.solution}</div>`;
-  state.results.push(allOk);
+  document.getElementById('revealNote')?.remove();
+  state.results.push(result);
   if (state.results.length < state.problems.length) sendLog(progressPayload(state, false)); // save progress after every problem
   const last = state.i === state.problems.length - 1;
   document.getElementById('acts').innerHTML = `<button class="btn" id="next">${last ? 'See results' : 'Next problem'}</button>`;
@@ -338,14 +365,18 @@ function check(state) {
 // ---------- results + logging ----------
 async function finish(state) {
   const { skill, level, problems, results } = state;
-  const score = results.filter(Boolean).length, total = problems.length;
+  const score = results.filter(r => r === true).length;
+  const skipped = results.filter(r => r === 'skip').length;
+  const total = results.length - skipped;                 // problems actually attempted
   const minutes = Math.round((Date.now() - state.started) / 6000) / 10;
-  const missed = problems.filter((_, k) => !results[k]).map(p => p.tag);
+  const missed = problems.filter((_, k) => results[k] === false).map(p => p.tag);
+  const viewed = problems.filter((_, k) => results[k] === 'skip').map(p => p.tag);
   const best = store.get('pp.best', {});
   const key = `${skill.id}.${level}`;
-  if (!best[key] || score > best[key].score) { best[key] = { score, total }; store.set('pp.best', best); }
+  const ratio = b => (b.total ? b.score / b.total : 0);
+  if (total && (!best[key] || score > best[key].score || (score === best[key].score && ratio({ score, total }) > ratio(best[key])))) { best[key] = { score, total }; store.set('pp.best', best); }
 
-  const pct = score / total;
+  const pct = total ? score / total : 0;
   const advice = pct >= 0.83 ? (level < 3 ? `Strong work. Try ${skill.levels[level + 1].name} next.` : 'Strong work on the hardest level.')
     : pct >= 0.5 ? 'Good progress. Read the worked solutions for the ones you missed, then try another set at this level.'
     : (level > 1 ? `Try another set here, or step back to ${skill.levels[level - 1].name} first.` : 'Read the worked solutions carefully, then try another set.');
@@ -355,8 +386,9 @@ async function finish(state) {
       <div class="crumb muted"><a href="#/">All skills</a> / ${esc(skill.title)} / ${skill.levels[level].name}</div>
       <h1 style="margin-top:6px">Set complete</h1>
       <div class="score-big">${score}<span style="font-size:1.4rem;color:var(--grey)"> / ${total}</span></div>
-      <p>${advice}</p>
-      ${missed.length ? `<p class="muted" style="margin-bottom:0">Problems to review:</p><ul class="review-list">${[...new Set(missed)].map(t => { const n = missed.filter(x => x === t).length; return `<li>${esc(t)}${n > 1 ? ` (${n})` : ''}</li>`; }).join('')}</ul>` : ''}
+      ${skipped ? `<p class="muted">You used "Show me how" on ${skipped} problem${skipped === 1 ? '' : 's'}, so ${skipped === 1 ? 'it is' : 'they are'} not counted in your score.</p>` : ''}
+      <p>${total ? advice : 'Read through the worked solutions, then try another set on your own.'}</p>
+      ${missed.length || viewed.length ? `<p class="muted" style="margin-bottom:0">Problems to review:</p><ul class="review-list">${[...new Set([...missed, ...viewed])].map(t => { const n = missed.filter(x => x === t).length, v = viewed.filter(x => x === t).length; return `<li>${esc(t)}${n > 1 ? ` (${n})` : ''}${v ? ` <span class="muted">(solution viewed${v > 1 ? ` ×${v}` : ''})</span>` : ''}</li>`; }).join('')}</ul>` : ''}
       <div id="logstatus" class="status muted">Saving your result…</div>
       <div class="actions">
         <a class="btn" href="#/practice/${skill.id}/${level}" id="again">Another ${skill.levels[level].name} set</a>
@@ -379,15 +411,17 @@ async function finish(state) {
 // One row per set in the Sheet. Every update carries the set ID; the Sheet keeps the latest.
 function progressPayload(state, done) {
   const { skill, level, problems, results } = state;
-  const attempted = results.length, score = results.filter(Boolean).length;
+  const skipped = results.filter(r => r === 'skip').length;
+  const attempted = results.length - skipped, score = results.filter(r => r === true).length;
+  const viewed = skipped ? ` (${skipped} solution${skipped === 1 ? '' : 's'} viewed)` : '';
   return {
     setId: state.setId,
     name: student.name, course: student.course, teacher: student.teacher || '', block: student.block,
     skill: skill.title, level: skill.levels[level].name,
-    status: done ? 'Completed' : `Stopped: ${attempted} of ${problems.length}`,
+    status: (done ? 'Completed' : `Stopped: ${results.length} of ${problems.length}`) + viewed,
     score, attempted, total: problems.length,
     percent: attempted ? Math.round(100 * score / attempted) : 0,
-    missed: problems.slice(0, attempted).filter((_, k) => !results[k]).map(p => p.tag).join('; '),
+    missed: problems.slice(0, results.length).filter((_, k) => results[k] === false).map(p => p.tag).join('; '),
     minutes: Math.round((Date.now() - state.started) / 6000) / 10,
     version: CONFIG.version,
   };
