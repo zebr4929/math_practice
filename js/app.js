@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=2.5';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.5';
-import { CONFIG } from './config.js?v=2.5';
-import { makeGrid, makeLogGrid } from './graph.js?v=2.5';
+import { SKILLS, byId } from './skills/index.js?v=2.6';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.6';
+import { CONFIG } from './config.js?v=2.6';
+import { makeGrid, makeLogGrid } from './graph.js?v=2.6';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -95,7 +95,13 @@ function signIn() {
 function perCourse(v) { return v && typeof v === 'object' ? v[courseOf(student)?.skills] : v; }
 function groupOf(s) { return perCourse(s.group) || 'Other'; }
 function lessonOf(s) { return perCourse(s.lesson) || ''; }
-function lessonKey(s) { const l = lessonOf(s); return l ? l.split(/[^\d.]/)[0].split('.').map(Number) : [999]; }
+function lessonKey(s) {
+  const l = lessonOf(s);
+  if (!l) return [999];
+  const m = l.match(/^([A-Za-z])\.(\d+)/);              // lettered chapters (like T.1) sort after numbered ones
+  if (m) return [100 + m[1].toUpperCase().charCodeAt(0), +m[2]];
+  return l.split(/[^\d.]/)[0].split('.').map(Number);
+}
 function byLesson(a, b) { const x = lessonKey(a), y = lessonKey(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); }
 
 function skillCard(s, best) {

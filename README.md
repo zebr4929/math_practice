@@ -52,6 +52,11 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | Accelerated | 2.8 Intervals of Increasing and Decreasing | From a graph | Vertex form | Standard form |
 | Accelerated | 2.9 Projectile Problems | Start and maximum | Maximum and landing | Landing (formula) and heights |
 | Accelerated | 2.10 Equations of Circles | From center and radius | Read center/radius, graphs, tangent | Complete the square |
+| Accelerated | T Transformations with Tables | Vertical shift | Horizontal and vertical shifts | Dilations and reflections |
+| Accelerated | T Identifying Transformations | Translations | One dilation or reflection | Combinations, factor first |
+| Accelerated | T Where Does the Point Go? | Translations | One dilation or reflection | Combinations, vertex after a shift |
+| Accelerated | T Writing Equations from Transformations | Shifts only | One stretch or reflection | Combinations |
+| Accelerated | T Domain and Range After Transformations | Single shift | Two shifts | Dilations and reflections |
 
 ## Files
 

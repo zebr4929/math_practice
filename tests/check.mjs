@@ -609,4 +609,43 @@ console.log('problems', count, 'errors', errors);
   }
   console.log('two points check: bad =', bad); errors += bad;
 }
+// Unit T: transformations
+{
+  const TR = await import('../js/skills/alg2/transformations.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 12) console.log('T FAIL', m, (p?.prompt || '').slice(0, 150)); };
+  const typed = tex => { let t = tex.replace(/\\left\|/g, '|').replace(/\\right\|/g, '|').replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\cdot/g, '*'), prev;
+    do { prev = t; t = t.replace(/\\d?t?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)'); } while (t !== prev);
+    return t.replace(/\\,|\\ /g, '').replace(/[{}]/g, ''); };
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 1500; seed++) {
+    const R = salt => makeRng(seed * 7919 + L * 151 + salt);
+    { const p = TR.transTables.generate(L, R(1)), { T, xs, ys } = p._check;
+      const f = x => { const i = xs.indexOf(x); return i < 0 ? undefined : ys[i]; };
+      for (const pt of p.parts) {
+        let m;
+        if ((m = pt.label.match(/^\$f\((-?\d+)\) =\$$/))) { if (f(+m[1]) !== pt.answer.value()) B('f blank', p); }
+        else if ((m = pt.label.match(/^\$g\((-?\d+)\) =\$$/))) { const X = +m[1], fx = f(T.B * (X - T.h)); if (fx === undefined || Math.abs(T.A * fx + T.k - pt.answer.value()) > 1e-9) B('g blank', p); }
+        else if ((m = pt.label.match(/g\(x\) = (-?\d+)/))) { const X = pt.answer.value(), fx = f(T.B * (X - T.h)); if (fx === undefined || Math.abs(T.A * fx + T.k - +m[1]) > 1e-9) B('g x blank', p); }
+        else B('label ' + pt.label, p);
+      }
+      if (p.parts.length < 3) B('few blanks', p); }
+    { const p = TR.transIdentify.generate(L, R(2)), mc = p.parts[0];
+      if (new Set(mc.choices).size !== 4 || mc.choices[mc.answer] !== p._check.right) B('identify choices', p); }
+    { const p = TR.transPoint.generate(L, R(3)), c = p._check, [nx, ny] = p.parts[0].answer.map(q => q.value());
+      if (c.vx !== undefined) { const g = x => c.a * (x - c.h) ** 2 + c.b * (x - c.h) + c.c + c.k; if (Math.abs(g(nx) - ny) > 1e-9 || g(nx + 0.5) > ny === (c.a < 0)) B('vertex q', p); }
+      else if (Math.abs(c.B * (nx - c.h) - c.x0) > 1e-9 || Math.abs(c.A * c.y0 + c.k - ny) > 1e-9) B('point map', p); }
+    { const p = TR.transWrite.generate(L, R(4)), part = p.parts[0], t = typed(part.answerTex.split('$')[1]);
+      if (!part.check(t).ok) B('write own ' + t, p);
+      if (p._check.h && part.check(t.replace(/x ([+-]) (\d+)/, (m, sg, n) => `x ${sg === '+' ? '-' : '+'} ${n}`)).ok) B('write wrong accepted ' + t, p); }
+    { const p = TR.transDomain.generate(L, R(5)), c = p._check;
+      // brute force the image of the domain and range
+      const xs = [], ysv = []; for (let i = 0; i <= 400; i++) { const u = c.dom[0] + (c.dom[1] - c.dom[0]) * i / 400; xs.push(u / c.B + c.h); }
+      for (let i = 0; i <= 400; i++) { const u = c.ran[0] + (c.ran[1] - c.ran[0]) * i / 400; ysv.push(c.A * u + c.k); }
+      if (Math.abs(Math.min(...xs) - c.newDom[0]) > 1e-9 || Math.abs(Math.max(...xs) - c.newDom[1]) > 1e-9) B('domain ends', p);
+      if (Math.abs(Math.min(...ysv) - c.newRan[0]) > 1e-9 || Math.abs(Math.max(...ysv) - c.newRan[1]) > 1e-9) B('range ends', p);
+      const loIncl = c.A > 0 ? c.ran[2] : c.ran[3]; if (loIncl !== c.newRan[2]) B('range bracket', p);
+      for (const pt of p.parts) { const t = typed(pt.answerTex.split('$')[1]); if (!pt.check(t).ok) B('interval own ' + t, p);
+        const sw = t.replace(/^\[/, '#').replace(/^\(/, '[').replace(/^#/, '('); const r = pt.check(sw); if (r.ok || !r.msg) B('bracket swap accepted', p); } }
+  }
+  console.log('transformations check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);
