@@ -2,8 +2,8 @@
 //  1. Converting between exponential and logarithmic form.
 //  2. Evaluating logarithms without a calculator.
 //  3. Plotting points on a graph with a logarithmic (base 10) vertical axis.
-import { F, randInt, pick, shuffle } from '../../math.js?v=2.6';
-import { logValue } from '../../graph.js?v=2.6';
+import { F, randInt, pick, shuffle } from '../../math.js?v=2.7';
+import { logValue } from '../../graph.js?v=2.7';
 
 const GROUP = 'Unit 2 - Logarithms';
 
@@ -186,8 +186,8 @@ function why(b, arg, n) {
 export const logPlot = {
   id: 'log-plot',
   course: 'precalc',
-  group: GROUP,
-  lesson: '2.9',
+  group: 'Unit 2 - Log Equations and Semi-Log Plots',
+  lesson: '2.9, 2.15',
   title: 'Plotting on a Logarithmic Scale',
   blurb: 'Plot points on a graph whose vertical axis is scaled by powers of 10.',
   levels: {

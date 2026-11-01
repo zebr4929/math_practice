@@ -9,7 +9,7 @@ export const CONFIG = {
   courses: [
     // collapsible: show skills in sections that open and close. openSections: the sections that
     // start open for a student who has not opened or closed any yet (update as the year goes on).
-    { name: 'AP Precalculus', skills: 'precalc', collapsible: true, openSections: ['Unit 2 - Inverses and Composition', 'Unit 2 - Logarithms'] },
+    { name: 'AP Precalculus', skills: 'precalc', collapsible: true, openSections: ['Unit 2 - Logarithms', 'Unit 2 - Log Equations and Semi-Log Plots'] },
     { name: 'Accelerated Algebra II', skills: 'accel', collapsible: true, openSections: ['Unit 2 - Quadratic Functions and Graphs', 'Unit 2 - Applications and Circles', 'Unit T - Transformations'] },
     { name: 'Honors Algebra II', skills: 'honors' },
   ],
@@ -20,5 +20,5 @@ export const CONFIG = {
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '2.6',
+  version: '2.7',
 };

@@ -648,4 +648,56 @@ console.log('problems', count, 'errors', errors);
   }
   console.log('transformations check: bad =', bad); errors += bad;
 }
+// AP Precalc 2.10–2.15
+{
+  const A = await import('../js/skills/precalc/logs2.js' + v);
+  const Bm = await import('../js/skills/precalc/logs3.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 15) console.log('LOG FAIL', m, (p?.prompt || '').slice(0, 150)); };
+  // answerTex -> typed text for logexpr
+  const typed = tex => { let t = tex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\cdot/g, '*').replace(/\\div/g, '/').replace(/\\,/g, ' ').replace(/\\infty/g, '∞').replace(/\\cup/g, '∪').replace(/\\ /g, ' ').replace(/\\le/g, '<=').replace(/\\ge/g, '>='), prev;
+    do { prev = t; t = t.replace(/\\d?t?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)').replace(/\\log_\{([^{}]*)\}/g, 'log_($1)'); } while (t !== prev);
+    return t.replace(/\\log/g, 'log').replace(/\\ln/g, 'ln').replace(/[{}]/g, ''); };
+  const own = (pt, p, name) => { if (pt.type !== 'custom') return; const t = typed(pt.answerTex.split('$')[1]); const r = pt.check(t); if (!r.ok) B(name + ' own ' + t + ' ' + JSON.stringify(r), p); };
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 1200; seed++) {
+    const R = salt => makeRng(seed * 7919 + L * 173 + salt);
+    { const p = A.expLogNeither.generate(L, R(1)), c = p._check;
+      if (c.kind !== 'semilog') { const dx = c.xs.slice(1).map((x, i) => x - c.xs[i]), rx = c.xs.slice(1).map((x, i) => x / c.xs[i]), dy = c.ys.slice(1).map((y, i) => y - c.ys[i]), ry = c.ys.slice(1).map((y, i) => y / c.ys[i]);
+        const cst = a => a.every(u => Math.abs(u - a[0]) < 1e-9);
+        const want = cst(dx) && cst(ry) && !cst(dy) ? 0 : cst(rx) && cst(dy) && !cst(dx) ? 1 : 2;
+        if (p.parts[0].answer !== want) B('ENL classification', p); } }
+    { const p = A.expLogInversePoints.generate(L, R(2)), c = p._check;
+      if (L === 1 && (p.parts[0].answer[0].value() !== Math.pow(c.b, c.p) || p.parts[0].answer[1].value() !== c.p)) B('inv point', p);
+      if (L === 3) { const bb = Math.pow(c.y2 / c.y1, 1 / (c.x2 - c.x1)); if (Math.abs(Math.pow(bb, c.x1) - c.y1) > 1e-9) B('aroc base', p); } }
+    { const p = A.logBehavior.generate(L, R(3)), c = p._check, f = x => c.a * Math.log(x) / Math.log(c.b) + c.k;
+      const inc = f(2) > f(1), cdown = f(2) - 2 * f(1.5) + f(1) < 0;
+      if (inc !== c.inc || (inc !== cdown)) B('behavior', p);
+      for (const pt of p.parts.slice(0, 2)) own(pt, p, 'lim');
+      if (p.parts[2].answer !== (inc ? 1 : 2)) B('behavior mc', p); }
+    { const p = A.logTableK.generate(L, R(4)); own(p.parts[0], p, 'tablek'); }
+    { const p = A.logDomain.generate(L, R(5)), c = p._check; if (Math.abs(c.c * c.edge + c.d) > 1e-9) B('domain edge', p); own(p.parts[0], p, 'domain'); }
+    { const p = A.logCondense.generate(L, R(6)); own(p.parts[0], p, 'condense');
+      const given = typed(p.prompt.split('$')[1].replace(/^\;/, '')); if (p.parts[0].check(given).ok) B('condense given accepted ' + given, p); }
+    { const p = A.logExpand.generate(L, R(7)); own(p.parts[0], p, 'expand');
+      const given = typed(p.prompt.split('$')[1].replace(/^\;/, '')); if (p.parts[0].check(given).ok) B('expand given accepted ' + given, p); }
+    { const p = A.logTransformK.generate(L, R(8)); own(p.parts[0], p, 'transformk'); }
+    { const p = Bm.expEquations.generate(L, R(9)), c = p._check; if (Math.abs(c.res(c.x)) > 1e-7 * Math.max(1, Math.abs(c.res(c.x + 1)))) B('exp eq residual', p); own(p.parts[0], p, 'expeq'); }
+    { const p = Bm.logEqOne.generate(L, R(10)), c = p._check; if (!(Math.abs(c.res(c.x)) < 1e-9)) B('log eq residual', p); own(p.parts[0], p, 'logeq1'); }
+    { const p = Bm.logEqMulti.generate(L, R(11)), c = p._check, w = c.verify;
+      const ok = x => { if (w.kind === 'l1') { const lb = u => Math.log(u) / Math.log(w.b === 'e' ? Math.E : w.b); const A1 = x + w.p, A2 = w.q * x + w.r; if (A1 <= 0 || A2 <= 0) return false; return Math.abs(w.sub ? lb(A2) - lb(A1) - lb(w.m) : lb(w.m) + lb(A1) - lb(A2)) < 1e-9; }
+        if (w.kind === 'l2') { if (x + w.p <= 0 || x + w.q <= 0) return false; return Math.abs((x + w.p) * (x + w.q) - w.N) < 1e-9; }
+        if (x <= 0 || x + w.A <= 0 || x + w.B <= 0) return false; return Math.abs(Math.log(x + w.A) - Math.log(x) - Math.log(x + w.B)) < 1e-9; };
+      if (!c.sols.every(ok)) B('multi sols', p); if (c.extraneous !== undefined && ok(c.extraneous)) B('extraneous valid', p);
+      if (c.extraneous !== undefined && p.parts[0].check(`${c.sols[0]}, ${c.extraneous}`).ok) B('extraneous accepted', p); }
+    { const p = Bm.expLogInverses.generate(L, R(12)), c = p._check;
+      if (c.inv) { for (let x = -30; x <= 30; x += 0.7) { const y = c.inv(x); if (!isFinite(y) || Math.abs(c.inv(x + 1e-3) - y) < 1e-9 || Math.abs(y) > 1e6) continue; if (Math.abs(c.fwd(y) - x) > 1e-6 * Math.max(1, Math.abs(x))) { B('inverse at ' + x, p); break; } } own(p.parts[0], p, 'inverse'); } }
+    { const p = Bm.expLogInequalities.generate(L, R(13)), c = p._check;
+      for (let x = -12; x <= 12; x += 0.137) { const inSet = c.I.some(s => (x > s.lo || (s.lc && x === s.lo)) && (x < s.hi || (s.rc && x === s.hi))); if (inSet !== c.pred(x)) { B('ineq set at ' + x.toFixed(3), p); break; } }
+      own(p.parts[0], p, 'ineq'); }
+    { const p = Bm.logLinear.generate(L, R(14)); for (const pt of p.parts) own(pt, p, 'loglinear'); }
+    { const p = Bm.semiLogModel.generate(L, R(15)), c = p._check;
+      if (Math.abs(c.a * Math.pow(c.b, c.x1) - c.y1) > 1e-6 || Math.abs(c.a * Math.pow(c.b, c.x2) - c.y2) > 1e-6 || Math.abs(c.m - Math.log10(c.b)) > 1e-12) B('semilog', p);
+      for (const pt of p.parts) { const ap = pt.answerTex.match(/\\approx ([-\d.]+)/); const typedA = ap ? ap[1] : typed(pt.answerTex.split('$')[1]); const r = pt.check(typedA); if (!r.ok) B('semilog own ' + pt.label + ' ' + typedA + ' ' + pt.answerTex, p); } }
+  }
+  console.log('logs chapter check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);

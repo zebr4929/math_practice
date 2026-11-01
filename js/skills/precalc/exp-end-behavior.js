@@ -1,5 +1,5 @@
 // Skill: end behavior of exponential functions f(x) = a·b^(x-h) + k (AP Precalculus)
-import { F, randInt, pick, nonzero, readNumber } from '../../math.js?v=2.6';
+import { F, randInt, pick, nonzero, readNumber } from '../../math.js?v=2.7';
 
 export const skill = {
   id: 'exp-end-behavior',

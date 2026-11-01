@@ -166,7 +166,7 @@ export const fmtCoord = fmt;
 // so students have to locate them on the scale themselves.
 export const logValue = (m, e) => +(m * Math.pow(10, e)).toPrecision(6);
 export function makeLogGrid(opts) {
-  const { xmin, xmax, xsnap = 1, emin, emax, mantissas = [1, 2, 3, 4, 5, 6, 7, 8, 9], maxPoints = 12 } = opts;
+  const { xmin, xmax, xsnap = 1, emin, emax, mantissas = [1, 2, 3, 4, 5, 6, 7, 8, 9], maxPoints = 12, interactive = true } = opts;
   const M = 44, W = 520, decadeH = 150;
   const ux = (W - M - 20) / (xmax - xmin);
   const H = (emax - emin) * decadeH + M + 30;
@@ -174,7 +174,7 @@ export function makeLogGrid(opts) {
   const Y = y => 20 + (emax - Math.log10(y)) * decadeH;
   const root = document.createElement('div');
   root.className = 'grid-wrap';
-  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'coord-grid interactive log-grid', role: 'img', 'aria-label': 'Grid with a logarithmic vertical axis' });
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'coord-grid log-grid' + (interactive ? ' interactive' : ''), role: 'img', 'aria-label': 'Grid with a logarithmic vertical axis' });
   root.appendChild(svg);
   const g = el('g', {}, svg);
   for (let e = emin; e < emax; e++) {
@@ -196,9 +196,25 @@ export function makeLogGrid(opts) {
   snapsY.push(logValue(1, emax));
   snapsY.sort((a, b) => a - b);
 
+  const overlay = el('g', {}, svg);
   const ptsLayer = el('g', {}, svg);
   const points = [];
-  let locked = false;
+  let locked = !interactive;
+  // display helpers: a curve y = fn(x) and labeled points
+  function curve(fn, cls = 'curve') {
+    let d = '', pen = false;
+    for (let i = 0; i <= 300; i++) {
+      const x = xmin + (i / 300) * (xmax - xmin), y = fn(x);
+      if (!(y > 0) || Math.log10(y) < emin - 1e-9 || Math.log10(y) > emax + 1e-9) { pen = false; continue; }
+      d += `${pen ? 'L' : 'M'}${X(x).toFixed(1)},${Y(y).toFixed(1)}`; pen = true;
+    }
+    el('path', { d, class: cls }, overlay);
+  }
+  function label(x, y, text) {
+    el('circle', { cx: X(x), cy: Y(y), r: 5, class: 'pt-given' }, overlay);
+    if (text) { const right = X(x) < W - 120; el('text', { x: X(x) + (right ? 9 : -9), y: Y(y) - 8, class: 'pt-label', 'text-anchor': right ? 'start' : 'end' }, overlay).textContent = text; }
+  }
+  if (!interactive) return { root, curve, label };
   const info = document.createElement('div'); info.className = 'grid-info';
   const controls = document.createElement('div'); controls.className = 'grid-controls';
   controls.innerHTML = `<button type="button" class="key" data-act="undo">Undo</button><button type="button" class="key" data-act="clear">Clear</button>`;

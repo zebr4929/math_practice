@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=2.6';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.6';
-import { CONFIG } from './config.js?v=2.6';
-import { makeGrid, makeLogGrid } from './graph.js?v=2.6';
+import { SKILLS, byId } from './skills/index.js?v=2.7';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.7';
+import { CONFIG } from './config.js?v=2.7';
+import { makeGrid, makeLogGrid } from './graph.js?v=2.7';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -191,6 +191,7 @@ function showProblem(state) {
       <div class="prompt">${p.prompt}</div>
       ${p.visual ? `<div class="visual">${p.visual}</div>` : ''}
       ${p.displayGraph ? `<div class="visual" id="dgraph"></div>` : ''}
+      ${p.displayLog ? `<div class="visual" id="dlog"></div>` : ''}
       <div id="parts">${p.parts.map((part, k) => partHtml(part, k)).join('')}</div>
       <div id="sol"></div>
       <div class="actions" id="acts"><button class="btn" id="check">Check answer</button><button class="btn secondary" id="reveal" title="See the answer and worked solution. This problem will not count for or against you.">Show me how</button></div>
@@ -204,6 +205,12 @@ function showProblem(state) {
     for (const f of dg.fns || []) gr.curve(f);
     for (const l of dg.labels || []) gr.label(l.x, l.y, l.text);
     document.getElementById('dgraph').appendChild(gr.root);
+  }
+  if (p.displayLog) {
+    const dl = p.displayLog, gr = makeLogGrid({ ...dl.grid, interactive: false });
+    if (dl.fn) gr.curve(dl.fn);
+    for (const l of dl.labels || []) gr.label(l.x, l.y, l.text);
+    document.getElementById('dlog').appendChild(gr.root);
   }
   state.grids = {};
   // wire inputs

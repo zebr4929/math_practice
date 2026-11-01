@@ -28,6 +28,21 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | 2.9 Exponential and Logarithmic Form | Exponential to log, numbers | Log to exponential, log/ln/variables | Both directions, negative and fractional exponents |
 | AP Precalculus | 2.9 Evaluating Logarithms | Whole-number answers | Zero and negative answers | Fractional answers |
 | AP Precalculus | 2.9 Plotting on a Logarithmic Scale | Gridline values | Four decades, values below 1 | Values between gridlines, half-unit x |
+| AP Precalculus | 2.10 Exponential, Logarithmic, or Neither? | Clear patterns | Decreasing, negatives, ratios < 1 | Traps, and semi-log linear data |
+| AP Precalculus | 2.10 Using Exponential and Log Inverses | Swap a point | Log values from a table | Average rate of change of log_b x |
+| AP Precalculus | 2.11 Behavior of Logarithmic Functions | a > 0, b > 1 | Negative a or base < 1 | Both, with shifts |
+| AP Precalculus | 2.11 Finding the Missing Input in a Log Table | k in the middle | k first or last | Shifted inputs, powers of e |
+| AP Precalculus | 2.11 Domain and Range of Logarithmic Functions | log_b(x − h) | Coefficient inside | Fractions and negatives inside |
+| AP Precalculus | 2.12 Condensing Logarithms | Two terms | Coefficients | Several terms and constants |
+| AP Precalculus | 2.12 Expanding Logarithms | Products and quotients | Powers and numbers | Roots of fractions, factor first |
+| AP Precalculus | 2.12 Log Transformations as Translations and Dilations | Whole-number k | k = log 6 style | Change of base |
+| AP Precalculus | 2.13 Solving Exponential Equations | Isolate and convert | Shifted exponents, e | Common and unlike bases |
+| AP Precalculus | 2.13 Solving Equations with One Logarithm | Isolate and convert | Coefficients | Natural logs |
+| AP Precalculus | 2.13 Equations with Several Logarithms | log = log | Extraneous solutions | Intersections |
+| AP Precalculus | 2.13 Inverses of Exponential and Log Functions | Simple | Coefficients and shifts | Value of the inverse |
+| AP Precalculus | 2.13 Exponential and Log Inequalities | Exponential | One log with domain | Two logs with a quadratic |
+| AP Precalculus | 2.15 Log-Linear Form | y = ab^x to linear | Linear to y = ab^x | Contexts |
+| AP Precalculus | 2.15 Models from a Semi-Log Plot | Point on the axis | Whole-number base | Decay, rounded base |
 | Accelerated + Honors | Factoring Quadratics | a = 1 | a prime, plus special products | a not prime |
 | Accelerated + Honors | Solving by Factoring | a = 1 | Prime a, special products, terms on both sides | Composite a, rearranging |
 | Accelerated (imaginary) / Honors (real only) | Solving by Completing the Square | Even b | Odd b, constant on the right | Divide out a |
@@ -81,3 +96,5 @@ Calculator answers (2.5 percent and units problems) accept values rounded or tru
 Accelerated Algebra II uses the same open/close sections (Unit 2 - Complex Numbers, Solving Quadratics, Quadratic Functions and Graphs, Applications and Circles). Skills shared with Honors set `group` and `lesson` per course, like `group: { accel: '...', honors: '...' }`, so the Honors page is unchanged. Factoring Quadratics shows Accelerated students two extra Medium patterns (121x² − 16y² and 49 − 64x²).
 
 "Show me how": every problem has a button that reveals the answer and worked solution without grading. Those problems count as neither right nor wrong: the score is out of the problems actually attempted, and the Sheet's Status column notes it, like "Completed (2 solutions viewed)".
+
+Log answers (2.10–2.15) accept exact forms typed like log_4(9), ln(5/2) or 2 - e^5, or decimals to 3 places. The reader for these lives in js/skills/precalc/logexpr.js.
