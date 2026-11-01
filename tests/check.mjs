@@ -589,4 +589,24 @@ console.log('problems', count, 'errors', errors);
   }
   console.log('algebra II chapter 2 check: bad =', bad); errors += bad;
 }
+// y = ab^x from two points
+{
+  const D = await import('../js/skills/precalc/exp-data.js' + v);
+  let bad = 0; const B = (m, p) => { if (bad++ < 10) console.log('TP FAIL', m, (p?.prompt || '').slice(0, 140)); };
+  const fr = x => { for (let d = 1; d < 100000; d++) if (Math.abs(x * d - Math.round(x * d)) < 1e-9) return `${Math.round(x * d)}/${d}`; };
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 2000; seed++) {
+    const p = D.expTwoPoints.generate(L, makeRng(seed * 7919 + L * 131)), c = p._check;
+    if (p.tag === 'calculator data') {
+      if (Math.abs(c.a * Math.pow(c.b, c.x1) - c.y1) > 1e-6 || Math.abs(c.a * Math.pow(c.b, c.x2) - c.y2) > 1e-6) B('calc fit', p);
+      if (!p.parts[0].check(c.b.toFixed(3)).ok || !p.parts[1].check(c.a.toFixed(3)).ok || !p.parts[1].check(c.aAlt.toFixed(3)).ok) B('calc accept', p);
+      continue;
+    }
+    if (Math.abs(c.target(c.x1) - c.y1) > 1e-9 || Math.abs(c.target(c.x2) - c.y2) > 1e-9) B('points', p);
+    const part = p.parts[p.parts.length - 1];
+    if (!part.check(`${fr(c.a)}(${fr(c.b)})^x`).ok) B('own', p);
+    if (c.x1 !== 0) { const r = part.check(`${c.y1}(${fr(c.b)})^(x - ${c.x1})`); if (r.ok || !r.msg) B('shift accepted', p); }
+    if (L === 2) { const mc = p.parts[0]; if (!mc.choices[mc.answer].startsWith(`$${c.y1} = ab^`)) B('system', p); }
+  }
+  console.log('two points check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);

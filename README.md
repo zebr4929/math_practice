@@ -18,6 +18,7 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | Equivalent Forms of Geometric Rules | Pick the rule equivalent to a given rule | Match terms to a rule written from a different term | Same, with negative or fractional ratios |
 | AP Precalculus | Increasing, Decreasing and Concavity of Exponentials | From a table, positive outputs | From y = abˣ, a positive or negative | Tables with negative outputs, equations with shifts |
 | AP Precalculus | 2.5 Exponential Data with a Vertical Shift | x from 0, whole-number base | Growth or decay, a can be negative | x not from 0, fractional bases |
+| AP Precalculus | 2.5 Writing y = abˣ from Two Points | One point on the y-axis | Write the system, then the equation | Decay, fractional bases, negative x, calculator data |
 | AP Precalculus | 2.5 Percent Growth and Decay with Changing Units | Model given, values in two units | Write the model, values in two units | Rewrite the model in other units |
 | AP Precalculus | 2.7 Composition as an Expression | Linear and linear | Linear and quadratic | Square roots and rational functions |
 | AP Precalculus | 2.7 Composition with Multiple Representations | Table and equation | Graph, table, equation | Graph, table, piecewise, verbal; longer chains |

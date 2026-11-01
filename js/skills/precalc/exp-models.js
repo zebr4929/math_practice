@@ -1,7 +1,7 @@
 // AP Precalculus, Unit 2:
 //  1. Exponential models from geometric-sequence information, in seasonal word problems.
 //  2. Rewriting exponential functions in y = a·b^x form with exponent laws.
-import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.4';
+import { F, Frac, randInt, pick, parse, evaluate, toTex } from '../../math.js?v=2.5';
 
 // ================================================================
 // Seasonal contexts
@@ -246,8 +246,8 @@ function buildRewrite(level, rng) {
   };
 }
 
-const cleanEq = s => String(s).replace(/[−–]/g, '-').replace(/^\s*(y|f\s*\(\s*x\s*\))\s*=\s*/i, '').trim();
-function rewritePreview(str) { try { const s = cleanEq(str); return s ? toTex(parse(s)) : ''; } catch { return null; } }
+const cleanEq = s => String(s).replace(/[−–]/g, '-').replace(/^\s*[a-z]\s*(\(\s*x\s*\))?\s*=\s*/i, '').trim();
+export function rewritePreview(str) { try { const s = cleanEq(str); return s ? toTex(parse(s)) : ''; } catch { return null; } }
 
 const stripP = n => (n.op === 'paren' ? stripP(n.a) : n);
 const hasX = n => !!(n.v === 'x' || (n.a && hasX(n.a)) || (n.b && hasX(n.b)));
@@ -260,7 +260,7 @@ function isNumberLiteral(n) {
   return false;
 }
 
-function rewriteChecker(target) {
+export function rewriteChecker(target) {
   return str => {
     const s = cleanEq(str);
     if (!s) return { ok: false, msg: 'Enter the rewritten function, like 40(2)^x.', format: true };
