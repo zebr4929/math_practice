@@ -30,7 +30,7 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | 2.9 Plotting on a Logarithmic Scale | Gridline values | Four decades, values below 1 | Values between gridlines, half-unit x |
 | AP Precalculus | 2.10 Exponential, Logarithmic, or Neither? | Clear patterns | Decreasing, negatives, ratios < 1 | Traps, and semi-log linear data |
 | AP Precalculus | 2.10 Using Exponential and Log Inverses | Swap a point | Log values from a table | Average rate of change of log_b x |
-| AP Precalculus | 2.11 Behavior of Logarithmic Functions | a > 0, b > 1 | Negative a or base < 1 | Both, with shifts |
+| AP Precalculus | 2.11 Behavior of Logarithmic Functions | a > 0, b > 1 | Vertical and horizontal reflections | Horizontal shifts: students write the limit statements |
 | AP Precalculus | 2.11 Finding the Missing Input in a Log Table | k in the middle | k first or last | Shifted inputs, powers of e |
 | AP Precalculus | 2.11 Domain and Range of Logarithmic Functions | log_b(x − h) | Coefficient inside | Fractions and negatives inside |
 | AP Precalculus | 2.12 Condensing Logarithms | Two terms | Coefficients | Several terms and constants |

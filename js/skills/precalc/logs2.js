@@ -1,6 +1,6 @@
 // AP Precalculus 2.10–2.12: inverses of exponential functions, logarithmic functions, and log manipulation.
-import { F, randInt, pick, nonzero, shuffle } from '../../math.js?v=2.7';
-import { parseL, evalL, stripL, logsIn, varsL, previewL, valueChecker, intervalChecker, intervalTex, LOG_KEYS } from './logexpr.js?v=2.7';
+import { F, randInt, pick, nonzero, shuffle } from '../../math.js?v=2.8';
+import { parseL, evalL, stripL, logsIn, varsL, previewL, valueChecker, intervalChecker, intervalTex, LOG_KEYS } from './logexpr.js?v=2.8';
 
 const GROUP = 'Unit 2 - Logarithms';
 const fT = f => f.tex();
@@ -156,36 +156,77 @@ export const expLogInversePoints = {
 export const logBehavior = {
   id: 'log-behavior', course: 'precalc', group: GROUP, lesson: '2.11',
   title: 'Behavior of Logarithmic Functions',
-  blurb: 'Limits at 0⁺ and ∞, increasing or decreasing, and concavity of a·log_b x.',
+  blurb: 'Limits at the edge of the domain and at the far end, increasing or decreasing, and concavity.',
   levels: {
     1: { name: 'Easy', desc: 'Positive coefficient, base greater than 1, like 2log₃ x' },
-    2: { name: 'Medium', desc: 'A negative coefficient or a base between 0 and 1' },
-    3: { name: 'Challenging', desc: 'Both, like −3log_{1/2} x, with shifts' },
+    2: { name: 'Medium', desc: 'Vertical reflections (−4log₆ x or base below 1) and horizontal reflections (log(−x))' },
+    3: { name: 'Challenging', desc: 'Horizontal shifts like log(x − 3): write the limit statements yourself' },
   },
   generate(level, rng) {
-    let a, b;
+    // f(x) = a·log_b(s(x − h)) + k, where s = -1 is a horizontal reflection (over the y-axis or the line x = h)
+    let a, b, s = 1, h = 0;
     if (level === 1) { a = F(pick(rng, [1, 2, 3, 4, 5])); b = F(pick(rng, [2, 3, 4, 5, 6, 10])); }
-    else if (level === 2) { if (rng() < 0.5) { a = F(-pick(rng, [1, 2, 3, 4])); b = F(pick(rng, [2, 3, 6])); } else { a = F(pick(rng, [1, 2, 3])); b = pick(rng, [F(1, 2), F(1, 3), F(1, 4)]); } }
-    else { a = pick(rng, [F(-3), F(-2), F(-1), F(1, 2), F(-1, 2)]); b = pick(rng, [F(1, 2), F(1, 3), F(2, 3)]); if (a.sign() > 0 && rng() < 0.5) b = F(pick(rng, [2, 3])); }
+    else {
+      a = pick(rng, [F(1), F(2), F(3), F(-1), F(-2), F(-3), F(-4), F(1, 2), F(-1, 2)]);
+      b = pick(rng, [F(2), F(3), F(6), F(10), F(1, 2), F(1, 3)]);
+      s = rng() < 0.45 ? -1 : 1;
+      if (level === 2 && s === 1 && a.sign() > 0 && b.value() > 1) a = a.neg();      // Medium always has a reflection
+      if (level === 3) h = nonzero(rng, -6, 6);
+    }
     const k = level === 3 ? randInt(rng, -5, 5) : 0;
-    const inc = a.sign() * (b.value() > 1 ? 1 : -1) > 0;
+    const A = a.sign() * (b.value() > 1 ? 1 : -1);          // sign of a·log_b u as u grows
+    const inc = A * s > 0, concaveDown = A > 0;              // a horizontal reflection flips direction but not concavity
+    const edgeVal = A > 0 ? -1 : 1, farVal = A > 0 ? 1 : -1; // limits as u -> 0+ and u -> infinity
     const name = pick(rng, ['f', 'g', 'h', 'r']);
-    const fx = `${name}(x) = ${coef(a)}${logHead(b)} x${k ? ` ${k > 0 ? '+' : '-'} ${Math.abs(k)}` : ''}`;
+    const hT = Math.abs(h);
+    const inside = h === 0 ? (s > 0 ? 'x' : '-x') : s > 0 ? `x ${h > 0 ? '-' : '+'} ${hT}` : `${h} - x`;
+    const fx = `${name}(x) = ${coef(a)}${logHead(b)}\\left(${inside}\\right)${k ? ` ${k > 0 ? '+' : '-'} ${Math.abs(k)}` : ''}`;
+    const edgeT = `${h}^{${s > 0 ? '+' : '-'}}`, farT = s > 0 ? '\\infty' : '-\\infty';
+    const infTex = v => (v > 0 ? '$\\infty$' : '$-\\infty$');
     const choices = ['Increasing and concave up', 'Increasing and concave down', 'Decreasing and concave up', 'Decreasing and concave down'];
-    const answer = inc ? 1 : 2;
-    const lim = s => ({ type: 'custom', label: s === 0 ? `$\\displaystyle\\lim_{x \\to 0^+} ${name}(x) =$` : `$\\displaystyle\\lim_{x \\to \\infty} ${name}(x) =$`, check: infChecker((s === 0) === inc ? -1 : 1), keys: ['∞', '-∞'], placeholder: 'e.g. -∞', answerTex: (s === 0) === inc ? '$-\\infty$' : '$\\infty$' });
+    const answer = (inc ? 0 : 2) + (concaveDown ? 1 : 0);
+    const parts = [];
+    if (level < 3) {
+      parts.push({ type: 'custom', label: `$\\displaystyle\\lim_{x \\to ${edgeT}} ${name}(x) =$`, check: infChecker(edgeVal), keys: ['∞', '-∞'], placeholder: 'e.g. -∞', answerTex: infTex(edgeVal) });
+      parts.push({ type: 'custom', label: `$\\displaystyle\\lim_{x \\to ${farT}} ${name}(x) =$`, check: infChecker(farVal), keys: ['∞', '-∞'], placeholder: 'e.g. ∞', answerTex: infTex(farVal) });
+    } else {
+      // students write each limit statement: where x goes (with the side), and what the function does
+      parts.push({ type: 'custom', label: 'Near the edge of the domain, $x$ approaches:', check: approachChecker(h, s), keys: ['+', '-', '∞'], placeholder: 'e.g. 3+', answerTex: `$${edgeT}$`, help: 'Type the number and the side: 3+ means from the right, 3- means from the left.' });
+      parts.push({ type: 'custom', label: `and $${name}(x)$ approaches:`, check: infChecker(edgeVal), keys: ['∞', '-∞'], placeholder: 'e.g. -∞', answerTex: infTex(edgeVal) });
+      parts.push({ type: 'custom', label: 'At the other end of the domain, $x$ approaches:', check: infChecker(s), keys: ['∞', '-∞'], placeholder: 'e.g. ∞', answerTex: `$${farT}$` });
+      parts.push({ type: 'custom', label: `and $${name}(x)$ approaches:`, check: infChecker(farVal), keys: ['∞', '-∞'], placeholder: 'e.g. ∞', answerTex: infTex(farVal) });
+    }
+    parts.push({ type: 'mc', label: `$${name}$ is:`, choices, answer });
+    const domain = s > 0 ? `x > ${h}` : `x < ${h}`;
+    const steps = [];
+    steps.push(`Domain: the input of the log must be positive, $${inside} > 0$, so $${domain}$. The graph only exists ${s > 0 ? 'to the right' : 'to the left'} of $x = ${h}$, so $x$ can only approach ${h} from the ${s > 0 ? 'right' : 'left'}${level === 3 ? ` (written $x \\to ${edgeT}$)` : ''}, and the other end is $x \\to ${farT}$.`);
+    steps.push(`$${logHead(b)} u$ ${b.value() > 1 ? 'increases (base greater than 1)' : 'decreases (base between 0 and 1)'}. ${a.sign() < 0 ? `The negative coefficient $${a.tex()}$ reflects it vertically. ` : ''}Together, as the input of the log shrinks toward 0 the output goes to ${edgeVal > 0 ? '$\\infty$' : '$-\\infty$'}, and as it grows the output goes to ${farVal > 0 ? '$\\infty$' : '$-\\infty$'}.`);
+    steps.push(`So $\\displaystyle\\lim_{x \\to ${edgeT}} ${name}(x) = ${edgeVal > 0 ? '\\infty' : '-\\infty'}$ and $\\displaystyle\\lim_{x \\to ${farT}} ${name}(x) = ${farVal > 0 ? '\\infty' : '-\\infty'}$.${k ? ` (The ${k > 0 ? '+' : '-'} ${Math.abs(k)} only shifts the graph up or down.)` : ''}`);
+    steps.push(`${s < 0 ? 'The horizontal reflection (the $-x$ inside) flips the direction left to right but does not change which way the graph bends. ' : ''}Reading left to right the graph is ${inc ? 'increasing' : 'decreasing'}, and it is concave ${concaveDown ? 'down' : 'up'}${concaveDown ? '' : ''}: ${choices[answer].toLowerCase()}.`);
     return {
-      tag: (a.sign() < 0 ? 'negative a' : 'positive a') + (b.value() < 1 ? ', base < 1' : ', base > 1'),
-      prompt: `Let $${fx}$. Complete each limit, then describe the function.`,
-      parts: [lim(0), lim(1), { type: 'mc', label: `$${name}$ is:`, choices, answer }],
-      solution: `$${logHead(b)} x$ ${b.value() > 1 ? 'is increasing (base greater than 1), so it goes to $-\\infty$ as $x \\to 0^+$ and to $\\infty$ as $x \\to \\infty$' : 'is decreasing (base between 0 and 1), so it goes to $\\infty$ as $x \\to 0^+$ and to $-\\infty$ as $x \\to \\infty$'}.<br>`
-        + (a.sign() < 0 ? `The coefficient $${a.tex()}$ is negative, so it reflects the graph and flips both limits. ` : `The coefficient $${a.tex()}$ is positive, so it keeps the same directions. `)
-        + (k ? `The ${k > 0 ? '+' : '-'}${Math.abs(k)} only shifts the graph and does not change the limits. ` : '')
-        + `<br>So $${name}$ is ${inc ? 'increasing' : 'decreasing'}. A log graph bends ${inc ? 'down while it rises (concave down)' : 'up while it falls (concave up)'}: ${inc ? 'increasing and concave down' : 'decreasing and concave up'}.`,
-      _check: { a: a.value(), b: b.value(), k, inc },
+      tag: [a.sign() < 0 || b.value() < 1 ? 'vertical reflection' : '', s < 0 ? 'horizontal reflection' : '', h ? 'horizontal shift' : ''].filter(Boolean).join(', ') || 'no reflection',
+      prompt: level < 3 ? `Let $${fx}$. Complete each limit, then describe the function.` : `Let $${fx}$. Write the limit statement at each end of the domain, then describe the function.`,
+      parts, solution: steps.join('<br>'),
+      _check: { a: a.value(), b: b.value(), s, h, k, inc, concaveDown, edgeVal, farVal },
     };
   },
 };
+// where x approaches near the edge: like 3+ (from the right) or -2- (from the left)
+function approachChecker(h, s) {
+  return str => {
+    const t = String(str).replace(/\s+/g, '').replace(/[−–]/g, '-').replace(/⁺/g, '+').replace(/⁻/g, '-').replace(/\^/g, '').replace(/fromtheright|right/gi, '+').replace(/fromtheleft|left/gi, '-');
+    if (!t) return { ok: false, msg: 'Enter where x approaches, like 3+.', format: true };
+    if (/∞|inf/i.test(t)) return { ok: false };
+    const m = t.match(/^(-?\d+(?:\.\d+)?)([+-])$/);
+    if (!m) {
+      if (/^-?\d+(?:\.\d+)?$/.test(t)) return { ok: false, msg: 'Include the side: a + after the number means from the right, a − means from the left (like 3+ or 3-).', format: true };
+      return { ok: false, msg: 'Type the number and the side, like 3+ or -2-.', format: true };
+    }
+    const num = +m[1], side = m[2] === '+' ? 1 : -1;
+    if (num === h && side !== s) return { ok: false, msg: `The domain is on the ${s > 0 ? 'right' : 'left'} side of ${h}, so x can only come from the ${s > 0 ? 'right' : 'left'}.` };
+    return { ok: num === h && side === s };
+  };
+}
 function infChecker(sign) {
   return str => {
     const s = String(str).replace(/\s+/g, '').replace(/[−–]/g, '-').replace(/infinity|inf/gi, '∞');

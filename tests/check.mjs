@@ -668,11 +668,15 @@ console.log('problems', count, 'errors', errors);
     { const p = A.expLogInversePoints.generate(L, R(2)), c = p._check;
       if (L === 1 && (p.parts[0].answer[0].value() !== Math.pow(c.b, c.p) || p.parts[0].answer[1].value() !== c.p)) B('inv point', p);
       if (L === 3) { const bb = Math.pow(c.y2 / c.y1, 1 / (c.x2 - c.x1)); if (Math.abs(Math.pow(bb, c.x1) - c.y1) > 1e-9) B('aroc base', p); } }
-    { const p = A.logBehavior.generate(L, R(3)), c = p._check, f = x => c.a * Math.log(x) / Math.log(c.b) + c.k;
-      const inc = f(2) > f(1), cdown = f(2) - 2 * f(1.5) + f(1) < 0;
-      if (inc !== c.inc || (inc !== cdown)) B('behavior', p);
-      for (const pt of p.parts.slice(0, 2)) own(pt, p, 'lim');
-      if (p.parts[2].answer !== (inc ? 1 : 2)) B('behavior mc', p); }
+    { const p = A.logBehavior.generate(L, R(3)), c = p._check, f = x => c.a * Math.log(c.s * (x - c.h)) / Math.log(c.b) + c.k;
+      const X = t => c.h + c.s * t;                                   // a point inside the domain, t > 0 from the edge
+      const xs = [1, 1.5, 2].map(X).sort((u, w) => u - w), ys = xs.map(f);
+      const inc = ys[1] > ys[0], cdown = ys[2] - 2 * ys[1] + ys[0] < 0;
+      if (inc !== c.inc || cdown !== c.concaveDown) B('behavior', p);
+      if (Math.sign(f(X(1e-9)) - f(X(1))) !== c.edgeVal || Math.sign(f(X(1e9)) - f(X(1))) !== c.farVal) B('behavior limits', p);
+      if (p.parts[p.parts.length - 1].answer !== (inc ? 0 : 2) + (cdown ? 1 : 0)) B('behavior mc', p);
+      for (const pt of p.parts) if (pt.type === 'custom') { const t = typed(pt.answerTex.split('$')[1]).replace(/\^\(([+-])\)/, '$1'); const r = pt.check(t); if (!r.ok) B('behavior own ' + t, p); }
+      if (L === 3) { const ap = p.parts[0]; if (ap.check(`${c.h}${c.s > 0 ? '-' : '+'}`).ok || !ap.check(`${c.h}`).format) B('approach side', p); } }
     { const p = A.logTableK.generate(L, R(4)); own(p.parts[0], p, 'tablek'); }
     { const p = A.logDomain.generate(L, R(5)), c = p._check; if (Math.abs(c.c * c.edge + c.d) > 1e-9) B('domain edge', p); own(p.parts[0], p, 'domain'); }
     { const p = A.logCondense.generate(L, R(6)); own(p.parts[0], p, 'condense');

@@ -1,7 +1,7 @@
 // A small expression reader that understands logarithms, for the 2.10–2.15 skills.
 // Accepts: log_4(9), log_4 9, log₄9, log(100) (base 10), ln(5/2), e^4, sqrt(21), √21, 2^(x+3), |x|,
 // implicit multiplication (3log(x), 2x), and single-letter variables. "e" is always the constant e.
-import { F } from '../../math.js?v=2.7';
+import { F } from '../../math.js?v=2.8';
 
 const SUB = '₀₁₂₃₄₅₆₇₈₉';
 function normalize(s) {
