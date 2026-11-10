@@ -1,7 +1,7 @@
 // AP Precalculus 2.13 and 2.15: exponential and log equations, inverses and inequalities; semi-log plots.
-import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=2.8';
-import { parseL, evalL, varsL, previewL, valueChecker, listChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=2.8';
-import { logHead } from './logs2.js?v=2.8';
+import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=2.9';
+import { parseL, evalL, varsL, previewL, valueChecker, listChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=2.9';
+import { logHead } from './logs2.js?v=2.9';
 
 const GROUP = 'Unit 2 - Log Equations and Semi-Log Plots';
 const d3 = v => (Math.round(v * 1000) / 1000).toFixed(3);
@@ -40,7 +40,9 @@ function buildExpEq(level, rng) {
     const x = Math.log(q) / Math.log(b) - h;
     steps.push(`Isolate the exponential: ${c ? `${c > 0 ? 'subtract' : 'add'} ${Math.abs(c)}${a > 1 ? `, then divide by ${a}` : ''}` : `divide by ${a}`}: $${expT} = ${q}$.`);
     steps.push(`Rewrite in log form: $${h ? `x ${h > 0 ? '+' : '-'} ${Math.abs(h)}` : 'x'} = \\log_{${b}} ${q}$${h ? `, so $x = \\log_{${b}} ${q} ${h > 0 ? '-' : '+'} ${Math.abs(h)}$` : ''}. That is about $${d3(x)}$.`);
-    return { tag: h ? 'shifted exponent' : 'isolate and convert', prompt: `Solve: $\\;${coefT(a)}${expT}${numPart(c)} = ${dd}$`, parts: [valuePart('$x =$', x, `\\log_{${b}} ${q}${h ? ` ${h > 0 ? '-' : '+'} ${Math.abs(h)}` : ''}`)], solution: steps.join('<br>'), _check: { x, res: X => a * Math.pow(b, X + h) + c - dd } };
+    // with a coefficient, the base goes in parentheses: 2(4)^x, never 24^x
+    const leadT = a === 1 ? expT : `${a}(${b})^{${h ? `x ${h > 0 ? '+' : '-'} ${Math.abs(h)}` : 'x'}}`;
+    return { tag: h ? 'shifted exponent' : 'isolate and convert', prompt: `Solve: $\\;${leadT}${numPart(c)} = ${dd}$`, parts: [valuePart('$x =$', x, `\\log_{${b}} ${q}${h ? ` ${h > 0 ? '-' : '+'} ${Math.abs(h)}` : ''}`)], solution: steps.join('<br>'), _check: { x, res: X => a * Math.pow(b, X + h) + c - dd } };
   }
   if (level === 2) {
     // c - a e^x = d  ->  e^x = (c - d)/a
@@ -391,7 +393,7 @@ export const logLinear = {
         tag: 'exponential to log-linear',
         prompt: `Write the linear model for the semi-log plot of $f(x) = ${a}(${bT})^{x}$, in the form $${L} y = mx + k$.`,
         parts: [valuePart('Slope $m =$', m, `${L} ${bT}`, `e.g. ${base === 10 ? 'log(4)' : base === 2 ? 'log_2(4)' : 'ln(4)'}`), valuePart('Intercept $k =$', k, `${L} ${a}`, 'e.g. 0.699')],
-        solution: `Take ${L === '\\ln' ? 'the natural log' : 'the log'} of both sides: $${L} y = ${L}\\left(${a}\\cdot ${bT}^x\\right) = ${L} ${a} + x\\,${L} ${bT}$.<br>So $${L} y = (${L} ${bT})x + ${L} ${a}$: slope $m = ${L} ${bT} \\approx ${d3(m)}$ and intercept $k = ${L} ${a} \\approx ${d3(k)}$.`,
+        solution: `Take ${L === '\\ln' ? 'the natural log' : 'the log'} of both sides: $${L} y = ${L}\\left(${a}(${bT})^{x}\\right) =${L} ${a} + x\\,${L} ${bT}$.<br>So $${L} y = (${L} ${bT})x + ${L} ${a}$: slope $m = ${L} ${bT} \\approx ${d3(m)}$ and intercept $k = ${L} ${a} \\approx ${d3(k)}$.`,
         _check: { m, k },
       };
     }

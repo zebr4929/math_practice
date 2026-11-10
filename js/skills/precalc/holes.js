@@ -1,5 +1,5 @@
 // Skill: Holes vs. zeros vs. vertical asymptotes in factored rational functions
-import { F, Frac, randInt, pick, nonzero, shuffle, distinctInts, factorTex, paren } from '../../math.js?v=2.8';
+import { F, Frac, randInt, pick, nonzero, shuffle, distinctInts, factorTex, paren } from '../../math.js?v=2.9';
 
 export const skill = {
   id: 'holes',
@@ -139,8 +139,10 @@ function fullAnalysis(rng) {
   })();
   // hole y computation text
   const sub = (() => {
-    const top = Object.keys(A.redNum).map(r => `${paren(hx - Number(r))}${A.redNum[r] > 1 ? '^{' + A.redNum[r] + '}' : ''}`).join('');
-    const bot = Object.keys(A.redDen).map(r => `${paren(hx - Number(r))}${A.redDen[r] > 1 ? '^{' + A.redDen[r] + '}' : ''}`).join('');
+    // every substituted factor sits in its own parentheses, so 2(3)^2 never reads as 23^2
+    const fac = v => `(${v})`;
+    const top = Object.keys(A.redNum).map(r => `${fac(hx - Number(r))}${A.redNum[r] > 1 ? '^{' + A.redNum[r] + '}' : ''}`).join('');
+    const bot = Object.keys(A.redDen).map(r => `${fac(hx - Number(r))}${A.redDen[r] > 1 ? '^{' + A.redDen[r] + '}' : ''}`).join('');
     return `${K < 0 ? '-' : ''}\\dfrac{${Math.abs(K) === 1 && top ? '' : Math.abs(K)}${top}}{${bot || 1}}`;
   })();
   return {

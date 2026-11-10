@@ -1,6 +1,6 @@
 // AP Precalculus 2.10–2.12: inverses of exponential functions, logarithmic functions, and log manipulation.
-import { F, randInt, pick, nonzero, shuffle } from '../../math.js?v=2.8';
-import { parseL, evalL, stripL, logsIn, varsL, previewL, valueChecker, intervalChecker, intervalTex, LOG_KEYS } from './logexpr.js?v=2.8';
+import { F, randInt, pick, nonzero, shuffle } from '../../math.js?v=2.9';
+import { parseL, evalL, stripL, logsIn, varsL, previewL, valueChecker, intervalChecker, intervalTex, LOG_KEYS } from './logexpr.js?v=2.9';
 
 const GROUP = 'Unit 2 - Logarithms';
 const fT = f => f.tex();
