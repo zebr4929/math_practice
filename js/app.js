@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=3.0';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.0';
-import { CONFIG } from './config.js?v=3.0';
-import { makeGrid, makeLogGrid } from './graph.js?v=3.0';
+import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.1';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.1';
+import { CONFIG } from './config.js?v=3.1';
+import { makeGrid, makeLogGrid } from './graph.js?v=3.1';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -46,6 +46,7 @@ function route() {
   if (!student) return signIn();
   const parts = location.hash.replace(/^#\/?/, '').split('/');
   if (parts[0] === 'practice' && byId[parts[1]] && mySkills().includes(byId[parts[1]]) && ['1', '2', '3'].includes(parts[2])) return startSet(byId[parts[1]], +parts[2]);
+  if (parts[0] === 'exam') { const ex = myExams().find(e => e.id === parts[1]); if (ex) return startExam(ex, parts[2] === 'new'); }
   home();
 }
 
@@ -143,13 +144,15 @@ function home() {
   groups = groups.sort((a, b) => { const x = firstLesson(a), y = firstLesson(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); });
   const openKey = 'pp.open.' + course.skills;
   const open = new Set(store.get(openKey, course.openSections || []));
+  const exams = myExams();
   app.innerHTML = intro + groups.map(g => {
     const items = list.filter(s => groupOf(s) === g).sort(byLesson);
+    const examsHere = exams.filter(e => g.startsWith(e.after) && !groups.slice(groups.indexOf(g) + 1).some(h => h.startsWith(e.after)));
     return `
       <details class="section" data-group="${esc(g)}" ${open.has(g) ? 'open' : ''}>
         <summary><span class="sec-title">${esc(g)}</span><span class="sec-count">${items.length} skill${items.length === 1 ? '' : 's'}</span></summary>
         <div class="sec-body">${items.map(s => skillCard(s, best)).join('')}</div>
-      </details>`;
+      </details>` + examsHere.map(e => examSection(e, best)).join('');
   }).join('');
   app.querySelectorAll('details.section').forEach(d => d.addEventListener('toggle', () => {
     const now = [...app.querySelectorAll('details.section')].filter(x => x.open).map(x => x.dataset.group);
@@ -198,6 +201,17 @@ function showProblem(state) {
       <div class="reveal-note muted" id="revealNote">Stuck? "Show me how" shows the answer and worked solution. It does not count as right or wrong.</div>
     </div>`;
   const card = document.getElementById('pcard');
+  mountParts(card, p, state);
+  state.checked = false;
+  document.getElementById('check').onclick = () => check(state);
+  document.getElementById('reveal').onclick = () => reveal(state);
+  typeset(card);
+  card.querySelector('input')?.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+}
+
+// draw a problem's given graph and wire up its answer inputs (shared by practice and the mock exam)
+function mountParts(card, p, state) {
   if (p.displayGraph) {
     const dg = p.displayGraph, gr = makeGrid({ ...dg.window, interactive: false });
     if (dg.asymptote !== undefined) gr.asymptote(dg.asymptote);
@@ -240,7 +254,7 @@ function showProblem(state) {
       });
     } else {
       const inp = card.querySelector(`#in${k}`);
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('check')?.click(); });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') (state.onEnter ? state.onEnter() : document.getElementById('check')?.click()); });
       card.querySelectorAll(`[data-part="${k}"] .key`).forEach(btn => btn.onclick = () => {
         if (state.checked) return;
         const s0 = inp.selectionStart ?? inp.value.length, s1 = inp.selectionEnd ?? s0;
@@ -259,12 +273,6 @@ function showProblem(state) {
       }
     }
   });
-  state.checked = false;
-  document.getElementById('check').onclick = () => check(state);
-  document.getElementById('reveal').onclick = () => reveal(state);
-  typeset(card);
-  card.querySelector('input')?.focus({ preventScroll: true });
-  window.scrollTo(0, 0);
 }
 
 function partHtml(part, k) {
@@ -473,4 +481,246 @@ async function sendLog(payload) {
   }
   store.set('pp.queue', remaining);
   return remaining.length === 0 ? true : false;
+}
+
+// ---------- mock exam ----------
+// One Challenging question per study guide skill, drawn from that skill's pool. Answers are saved as the
+// student moves around (and survive a reload: the exam is rebuilt from its seed). Nothing is graded until
+// they submit, and "Show me how" is not offered.
+function myExams() { return EXAMS.filter(e => e.course === courseOf(student)?.skills); }
+function examKey(exam) { return 'pp.exam.' + exam.id; }
+
+function examSection(exam, best) {
+  const saved = store.get(examKey(exam));
+  const b = best['exam.' + exam.id];
+  const answered = saved ? saved.answers.filter(a => a && a.some(v => !isBlank(v))).length : 0;
+  return `
+      <details class="section exam-section" data-group="${esc(exam.section)}" open>
+        <summary><span class="sec-title">${esc(exam.section)}</span><span class="sec-count">${exam.items.length} questions</span></summary>
+        <div class="sec-body"><div class="card skill">
+          <div><h2>${esc(exam.title)}</h2><p class="muted">${esc(exam.blurb)}</p></div>
+          <div class="levels">
+            <a class="level" href="#/exam/${exam.id}">
+              <span class="lv">${saved ? 'Resume' : 'Start'}</span>
+              <span class="ld">${saved ? `${answered} of ${exam.items.length} answered so far` : `${exam.items.length} questions, graded when you submit`}</span>
+              ${b ? `<span class="best">Best: ${b.score}/${b.total}</span>` : ''}
+            </a>
+            ${saved ? `<a class="level" href="#/exam/${exam.id}/new"><span class="lv">Start over</span><span class="ld">A new exam, and clear these answers</span></a>` : ''}
+          </div>
+        </div></div>
+      </details>`;
+}
+
+function buildExam(exam, seed) {
+  const rng = makeRng(seed), ctx = { course: courseOf(student)?.skills };
+  return exam.items.map(item => {
+    const pool = item.skills.map(id => byId[id]).filter(Boolean);
+    const skill = pool[Math.floor(rng() * pool.length)];
+    return { item, skill, p: skill.generate(exam.level, rng, ctx) };
+  });
+}
+
+function startExam(exam, fresh) {
+  if (fresh) { store.set(examKey(exam), null); location.hash = `#/exam/${exam.id}`; return; }
+  let saved = store.get(examKey(exam));
+  if (!saved) {
+    saved = { seed: (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0, answers: exam.items.map(() => null), i: 0, started: Date.now(), setId: 'exam-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) };
+    store.set(examKey(exam), saved);
+  }
+  let qs;
+  try { qs = buildExam(exam, saved.seed); } catch { store.set(examKey(exam), null); return startExam(exam, false); }
+  const state = { exam, qs, saved, i: saved.i || 0, mode: 'take', grids: {} };
+  showExamQuestion(state);
+}
+
+// (a function declaration, because route() can run before this point of the file is evaluated)
+function isBlank(v) { return v === null || v === undefined || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && !v.length); }
+
+// read the current answers off the page
+function captureValues(card, p, state) {
+  return p.parts.map((part, k) => {
+    const box = card.querySelector(`[data-part="${k}"]`);
+    if (part.type === 'graph') return state.grids[k].getPoints();
+    if (part.type === 'mc') { const sel = box.querySelector('.choice.sel'); return sel ? +sel.dataset.choice : null; }
+    if (part.type === 'multi') return [...box.querySelectorAll('.choice.sel')].map(b => +b.dataset.choice);
+    return card.querySelector(`#in${k}`).value;
+  });
+}
+// put saved answers back on the page
+function restoreValues(card, p, state, vals) {
+  if (!vals) return;
+  p.parts.forEach((part, k) => {
+    const v = vals[k], box = card.querySelector(`[data-part="${k}"]`);
+    if (isBlank(v)) return;
+    if (part.type === 'graph') state.grids[k].setPoints?.(v);
+    else if (part.type === 'mc') box.querySelector(`[data-choice="${v}"]`)?.classList.add('sel');
+    else if (part.type === 'multi') v.forEach(j => { const b = box.querySelector(`[data-choice="${j}"]`); if (b) { b.classList.add('sel'); b.setAttribute('aria-pressed', 'true'); } });
+    else { const inp = card.querySelector(`#in${k}`); inp.value = v; inp.dispatchEvent(new Event('input')); }
+  });
+}
+// grade one saved answer; a blank answer is wrong
+function gradeValue(part, v) {
+  if (isBlank(v) && part.type !== 'graph') return { ok: false, blank: true };
+  if (part.type === 'graph') return part.check(v || []);
+  if (part.type === 'mc') return { ok: v === part.answer };
+  if (part.type === 'multi') { const want = [...part.answers].sort((a, b) => a - b), got = [...v].sort((a, b) => a - b); return { ok: got.length === want.length && got.every((j, i) => j === want[i]) }; }
+  return part.check ? part.check(v)
+    : part.type === 'number' ? checkNumber(v, part.answer)
+    : part.type === 'list' ? checkList(v, part.answer)
+    : part.type === 'point' ? checkPoint(v, part.answer)
+    : checkRule(v, part.truth, part.var);
+}
+
+function showExamQuestion(state) {
+  const { exam, qs, i, mode } = state;
+  const { item, p } = qs[i];
+  const review = mode === 'review';
+  const answers = state.saved.answers;
+  const dots = qs.map((_, k) => {
+    const cls = review ? (state.graded[k].ok ? 'right' : 'wrong') : (answers[k] && answers[k].some(v => !isBlank(v)) ? 'answered' : '');
+    return `<button type="button" class="dot ${cls} ${k === i ? 'cur' : ''}" data-q="${k}" title="Question ${k + 1}" aria-label="Question ${k + 1}"></button>`;
+  }).join('');
+  const last = i === qs.length - 1;
+  app.innerHTML = `
+    <div class="practice-head">
+      <div><div class="crumb"><a href="#/">All skills</a> / ${esc(exam.title)}${review ? ' / Review' : ''}</div>
+      <h2 style="margin:2px 0 0">Question ${i + 1} of ${qs.length}</h2>
+      <div class="muted">Skill ${item.n}: ${esc(item.name)}</div></div>
+      <div class="dots exam-dots">${dots}</div>
+    </div>
+    <div class="card" id="pcard">
+      <div class="prompt">${p.prompt}</div>
+      ${p.visual ? `<div class="visual">${p.visual}</div>` : ''}
+      ${p.displayGraph ? `<div class="visual" id="dgraph"></div>` : ''}
+      ${p.displayLog ? `<div class="visual" id="dlog"></div>` : ''}
+      <div id="parts">${p.parts.map((part, k) => partHtml(part, k)).join('')}</div>
+      <div id="sol"></div>
+      <div class="actions" id="acts">
+        ${i > 0 ? '<button class="btn secondary" id="prev">Previous</button>' : ''}
+        ${!last ? '<button class="btn" id="next">Next</button>' : ''}
+        ${review ? '<button class="btn secondary" id="back">Back to results</button>' : last ? '<button class="btn" id="submit">Submit exam</button>' : ''}
+      </div>
+      <div id="examMsg"></div>
+      ${review ? '' : `<div class="reveal-note muted">Answers are saved as you go. Nothing is graded until you submit${last ? '' : ' on the last question'}.</div>`}
+    </div>`;
+  const card = document.getElementById('pcard');
+  state.grids = {};
+  state.checked = review;                   // locks choices and keypad buttons in review
+  mountParts(card, p, state);
+  restoreValues(card, p, state, answers[i]);
+  if (review) markReview(card, p, state, i);
+  const go = to => {
+    if (!review && !leaveQuestion(state)) return;
+    state.i = to; if (!review) { state.saved.i = to; store.set(examKey(exam), state.saved); }
+    showExamQuestion(state);
+  };
+  state.onEnter = () => (last ? null : go(i + 1));
+  document.getElementById('prev')?.addEventListener('click', () => go(i - 1));
+  document.getElementById('next')?.addEventListener('click', () => go(i + 1));
+  document.getElementById('back')?.addEventListener('click', () => examResults(state));
+  document.getElementById('submit')?.addEventListener('click', () => trySubmit(state, false));
+  app.querySelectorAll('.exam-dots .dot').forEach(d => d.addEventListener('click', () => go(+d.dataset.q)));
+  typeset(card);
+  if (!review) card.querySelector('input')?.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+}
+
+// save this question's answers; stay put if one can't be read (so it isn't marked wrong for format)
+function leaveQuestion(state) {
+  const card = document.getElementById('pcard'), p = state.qs[state.i].p;
+  const vals = captureValues(card, p, state);
+  let stuck = false;
+  p.parts.forEach((part, k) => {
+    const fb = card.querySelector(`[data-part="${k}"] .fb`);
+    fb.innerHTML = '';
+    if (isBlank(vals[k]) || part.type === 'graph') return;
+    const r = gradeValue(part, vals[k]);
+    if (r.format) { stuck = true; fb.innerHTML = `<div class="format-msg">${esc(r.msg)} Fix it, or clear the box to leave it blank.</div>`; }
+  });
+  state.saved.answers[state.i] = vals;
+  store.set(examKey(state.exam), state.saved);
+  return !stuck;
+}
+
+function trySubmit(state, confirmed) {
+  if (!leaveQuestion(state)) return;
+  const blanks = state.qs.map((q, k) => (state.saved.answers[k] || []).length && q.p.parts.every((_, j) => !isBlank(state.saved.answers[k][j])) ? -1 : k).filter(k => k >= 0);
+  if (blanks.length && !confirmed) {
+    const list = blanks.map(k => k + 1), msg = document.getElementById('examMsg');
+    msg.innerHTML = `<div class="format-msg">${list.length === 1 ? `Question ${list[0]} has` : `Questions ${list.slice(0, -1).join(', ')} and ${list[list.length - 1]} have`} a blank answer. Blank answers are marked wrong.
+      <div class="actions" style="margin-top:8px"><button class="btn" id="subAnyway">Submit anyway</button><button class="btn secondary" id="goBlank">Go to question ${list[0]}</button></div></div>`;
+    document.getElementById('subAnyway').onclick = () => trySubmit(state, true);
+    document.getElementById('goBlank').onclick = () => { state.i = blanks[0]; state.saved.i = blanks[0]; store.set(examKey(state.exam), state.saved); showExamQuestion(state); };
+    return;
+  }
+  state.graded = state.qs.map((q, k) => {
+    const parts = q.p.parts.map((part, j) => { const r = gradeValue(part, (state.saved.answers[k] || [])[j]); return r.format ? { ok: false } : r; });
+    return { ok: parts.every(r => r.ok), parts };
+  });
+  state.finished = Date.now();
+  store.set(examKey(state.exam), null);                   // the next visit starts a new exam
+  examResults(state, true);
+}
+
+function markReview(card, p, state, i) {
+  const g = state.graded[i];
+  p.parts.forEach((part, k) => {
+    const r = g.parts[k], box = card.querySelector(`[data-part="${k}"]`);
+    box.classList.add(r.ok ? 'ok' : 'no');
+    box.querySelectorAll('input').forEach(x => { x.readOnly = true; });
+    if (part.type === 'mc') box.querySelector(`[data-choice="${part.answer}"]`).classList.add('correct');
+    if (part.type === 'multi') part.answers.forEach(j => box.querySelector(`[data-choice="${j}"]`).classList.add('correct'));
+    if (part.type === 'graph') state.grids[k].reveal({ fn: part.fn, correct: part.correct });
+    box.querySelector('.fb').innerHTML = r.ok ? '<span class="mark-ok">✓ Correct</span>'
+      : `<span class="mark-no">✗ ${r.blank ? 'Left blank.' : 'Not quite.'}</span> ${r.msg ? `<span>${esc(r.msg)}</span> ` : ''}<span class="muted">Correct answer: ${answerTex(part)}</span>`;
+  });
+  document.getElementById('sol').innerHTML = `<div class="solution"><h3>Worked solution</h3>${p.solution}</div>`;
+}
+
+async function examResults(state, justSubmitted) {
+  const { exam, qs, graded } = state;
+  const score = graded.filter(g => g.ok).length, total = qs.length;
+  const minutes = Math.round((state.finished - state.saved.started) / 6000) / 10;
+  if (justSubmitted) {
+    const best = store.get('pp.best', {}), key = 'exam.' + exam.id;
+    if (!best[key] || score > best[key].score) { best[key] = { score, total }; store.set('pp.best', best); }
+  }
+  const rows = qs.map((q, k) => {
+    const g = graded[k], nOk = g.parts.filter(r => r.ok).length;
+    return `<tr class="${g.ok ? 'row-ok' : 'row-no'}">
+      <td><span class="${g.ok ? 'mark-ok' : 'mark-no'}">${g.ok ? '✓' : '✗'}</span></td>
+      <td><b>Skill ${q.item.n}:</b> ${esc(q.item.name)}<div class="muted small">${esc(q.skill.title)}${q.p.parts.length > 1 ? ` · ${nOk} of ${q.p.parts.length} parts correct` : ''}</div></td>
+      <td class="exam-links"><button class="btn secondary small" data-review="${k}">Review</button>${g.ok ? '' : ` <a class="btn secondary small" href="#/practice/${q.skill.id}/${exam.level}">Practice</a>`}</td>
+    </tr>`;
+  }).join('');
+  app.innerHTML = `
+    <div class="card">
+      <div class="crumb muted"><a href="#/">All skills</a> / ${esc(exam.title)}</div>
+      <h1 style="margin-top:6px">Mock exam results</h1>
+      <div class="score-big">${score}<span style="font-size:1.4rem;color:var(--grey)"> / ${total}</span></div>
+      <p>${score === total ? 'Every skill correct. Strong work.' : 'Review each question you missed, then practice those skills at Challenging.'}</p>
+      <table class="exam-table">${rows}</table>
+      <div id="logstatus" class="status muted">${justSubmitted ? 'Saving your result…' : ''}</div>
+      <div class="actions">
+        <a class="btn" href="#/exam/${exam.id}/new">Take a new mock exam</a>
+        <a class="btn secondary" href="#/">All skills</a>
+      </div>
+    </div>`;
+  app.querySelectorAll('[data-review]').forEach(b => b.onclick = () => { state.mode = 'review'; state.i = +b.dataset.review; showExamQuestion(state); });
+  window.scrollTo(0, 0);
+  if (!justSubmitted) return;
+  const missed = qs.filter((_, k) => !graded[k].ok).map(q => `Skill ${q.item.n}: ${q.item.name} (${q.skill.title})`);
+  const ok = await sendLog({
+    setId: state.saved.setId,
+    name: student.name, course: student.course, teacher: student.teacher || '', block: student.block,
+    skill: exam.title, level: 'Mock exam', status: 'Completed',
+    score, attempted: total, total, percent: Math.round(100 * score / total),
+    missed: missed.join('; '), minutes, version: CONFIG.version,
+  });
+  const status = document.getElementById('logstatus');
+  if (!status) return;
+  status.className = 'status ' + (ok === true ? 'sent' : 'warn');
+  status.textContent = ok === true ? '✓ Result saved for your teacher.'
+    : ok === 'off' ? 'Practice mode: results are not being recorded yet.'
+    : 'Could not reach the gradebook right now. Your result will be sent next time you finish a set.';
 }

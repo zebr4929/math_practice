@@ -179,3 +179,16 @@ input[type=text]:focus, select:focus { outline: none; border-color: var(--maroon
 .legend .lg-wrong { width: auto; height: auto; color: #c0392b; font-weight: 700; border-radius: 0; }
 .legend .lg-missed { border: 2px dashed var(--teal); }
 .limit-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* mock exam */
+.exam-dots { flex-wrap: wrap; max-width: 260px; justify-content: flex-end; }
+.exam-dots .dot { border: 0; padding: 0; cursor: pointer; }
+.exam-dots .dot.answered { background: var(--grey); }
+.exam-dots .dot.cur { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gold); }
+.exam-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+.exam-table td { padding: 10px 6px; border-top: 1px solid var(--grey-mid); vertical-align: middle; }
+.exam-table td:first-child { width: 28px; font-size: 1.2rem; }
+.exam-links { text-align: right; white-space: nowrap; }
+.btn.small { padding: 6px 12px; font-size: .9rem; }
+.small { font-size: .88rem; }
+@media (max-width: 560px) { .exam-links { white-space: normal; } .exam-links .btn { margin: 2px 0; } }

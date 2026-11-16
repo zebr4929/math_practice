@@ -1,7 +1,7 @@
 // AP Precalculus 2.13 and 2.15: exponential and log equations, inverses and inequalities; semi-log plots.
-import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=3.0';
-import { parseL, evalL, varsL, previewL, valueChecker, listChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=3.0';
-import { logHead } from './logs2.js?v=3.0';
+import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=3.1';
+import { parseL, evalL, varsL, previewL, valueChecker, listChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=3.1';
+import { logHead } from './logs2.js?v=3.1';
 
 const GROUP = 'Unit 2 - Log Equations and Semi-Log Plots';
 const d3 = v => (Math.round(v * 1000) / 1000).toFixed(3);

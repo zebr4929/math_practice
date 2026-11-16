@@ -154,7 +154,8 @@ export function makeGrid(opts) {
     }
     if (interactive) info.innerHTML = '<span class="legend"><i class="lg-right"></i> correct point &nbsp; <i class="lg-wrong">✕</i> incorrect point &nbsp; <i class="lg-missed"></i> point you missed</span>';
   }
-  return { root, getPoints: () => points.slice(), lock: () => { locked = true; }, reveal, curve, label, asymptote };
+  const setPoints = pts => { points.length = 0; points.push(...pts.map(q => ({ ...q }))); redraw(); };   // restore saved points (mock exam)
+  return { root, getPoints: () => points.slice(), setPoints, lock: () => { locked = true; }, reveal, curve, label, asymptote };
 }
 
 export const fmtCoord = fmt;
@@ -272,5 +273,6 @@ export function makeLogGrid(opts) {
     }
     info.innerHTML = '<span class="legend"><i class="lg-right"></i> correct point &nbsp; <i class="lg-wrong">✕</i> incorrect point &nbsp; <i class="lg-missed"></i> point you missed</span>';
   }
-  return { root, getPoints: () => points.slice(), lock: () => { locked = true; }, reveal };
+  const setPoints = pts => { points.length = 0; points.push(...pts.map(q => ({ ...q }))); redraw(); };
+  return { root, getPoints: () => points.slice(), setPoints, lock: () => { locked = true; }, reveal };
 }

@@ -834,4 +834,24 @@ console.log('problems', count, 'errors', errors);
   console.log('study guide check: bad =', bad); errors += bad;
 }
 function typedFrac(v) { const f = [1, 2, 3, 4].map(d => [Math.round(v * d), d]).find(([n, d]) => Math.abs(n / d - v) < 1e-9); return f[1] === 1 ? `$${f[0]}$` : `\\frac{${f[0]}}{${f[1]}}`; }
+
+// ---------- mock exams: every pool skill exists, generates at the exam level, and a seed rebuilds the same exam ----------
+{
+  let bad = 0; const B = m => { if (bad++ < 10) console.log('EXAM FAIL', m); };
+  const { EXAMS, byId } = await import('../js/skills/index.js' + v);
+  for (const ex of EXAMS) {
+    if (ex.items.length !== 12 || ex.items.some((it, k) => it.n !== k + 1)) B(ex.id + ' numbering');
+    for (const it of ex.items) for (const id of it.skills) { const sk = byId[id]; if (!sk) B('missing skill ' + id); else if (![].concat(sk.course).includes(ex.course)) B('wrong course ' + id); else if (!sk.levels[ex.level]) B('no level ' + id); }
+    const build = seed => { const rng = makeRng(seed); return ex.items.map(it => { const pool = it.skills.map(id => byId[id]); const sk = pool[Math.floor(rng() * pool.length)]; return { id: sk.id, p: sk.generate(ex.level, rng, { course: ex.course }) }; }); };
+    const used = new Set();
+    for (let t = 0; t < 400; t++) {
+      const seed = (t * 2654435761 + 12345) >>> 0;
+      let a, b; try { a = build(seed); b = build(seed); } catch (e) { B('build ' + e.message); continue; }
+      a.forEach(q => used.add(q.id));
+      if (JSON.stringify(a.map(q => [q.id, q.p.prompt, q.p.parts.map(x => x.answerTex || x.answer)])) !== JSON.stringify(b.map(q => [q.id, q.p.prompt, q.p.parts.map(x => x.answerTex || x.answer)]))) B('not reproducible from seed ' + seed);
+    }
+    for (const it of ex.items) for (const id of it.skills) if (!used.has(id)) B('never drawn ' + id);
+  }
+  console.log('mock exam check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);

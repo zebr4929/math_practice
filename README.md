@@ -79,6 +79,17 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | Accelerated | T Writing Equations from Transformations | Shifts only | One stretch or reflection | Combinations |
 | Accelerated | T Domain and Range After Transformations | Single shift | Two shifts | Dilations and reflections |
 
+## Mock exams
+
+AP Precalculus has a **Unit 2 Mock Exam** section after the Unit 2 sections. Each exam has one Challenging
+question for each of the 12 study guide skills. Each question is drawn from a pool of site skills for that
+skill (`js/skills/precalc/exam-unit2.js`), so every exam is different.
+
+- Students move freely between questions. Answers save as they go and survive a reload, because the exam is rebuilt from its seed.
+- Nothing is graded until they submit. There is no "Show me how" during the exam, and blank answers are marked wrong (they are warned first).
+- After submitting, students see their score, a skill-by-skill breakdown, a review of every question with the worked solution, and practice links for missed skills.
+- The Sheet gets one row per exam: skill "Unit 2 Mock Exam", level "Mock exam", with missed study guide skills listed.
+
 ## Files
 
 - `index.html`, `css/style.css`: the page (`precalc/` forwards old links here)
