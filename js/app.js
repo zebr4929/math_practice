@@ -1,7 +1,7 @@
-import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.1';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.1';
-import { CONFIG } from './config.js?v=3.1';
-import { makeGrid, makeLogGrid } from './graph.js?v=3.1';
+import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.2';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.2';
+import { CONFIG } from './config.js?v=3.2';
+import { makeGrid, makeLogGrid } from './graph.js?v=3.2';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -254,7 +254,11 @@ function mountParts(card, p, state) {
       });
     } else {
       const inp = card.querySelector(`#in${k}`);
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') (state.onEnter ? state.onEnter() : document.getElementById('check')?.click()); });
+      inp.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();   // without this, the same Enter press also clicks the Next button that appears, skipping the feedback
+        state.onEnter ? state.onEnter() : document.getElementById('check')?.click();
+      });
       card.querySelectorAll(`[data-part="${k}"] .key`).forEach(btn => btn.onclick = () => {
         if (state.checked) return;
         const s0 = inp.selectionStart ?? inp.value.length, s1 = inp.selectionEnd ?? s0;
