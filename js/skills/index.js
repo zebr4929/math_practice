@@ -1,34 +1,35 @@
-import { skill as holes } from './precalc/holes.js?v=2.9';
-import { skill as rationalSigns } from './precalc/rational-signs.js?v=2.9';
-import { arithmetic, geometric, geometricForms } from './precalc/sequences.js?v=2.9';
-import { skill as expEnd } from './precalc/exp-end-behavior.js?v=2.9';
-import { expModels, expRewrite } from './precalc/exp-models.js?v=2.9';
-import { skill as expBehavior } from './precalc/exp-behavior.js?v=2.9';
-import { expShifted, expUnits, expTwoPoints } from './precalc/exp-data.js?v=2.9';
-import { compExpr, compReps } from './precalc/composition.js?v=2.9';
-import { invTable, invGraph, invAlgebra } from './precalc/inverses.js?v=2.9';
-import { logConvert, logEval, logPlot } from './precalc/logs.js?v=2.9';
-import { skill as factoring } from './alg2/factoring.js?v=2.9';
-import { graphStandard, graphVertex } from './alg2/graphing.js?v=2.9';
-import { factoredFromGraph, factoredFromData, toVertexForm, vertexToStandard, maxMin, domainRange, coefFromSolutions, vertexFromPoint, incDec } from './alg2/forms.js?v=2.9';
-import { solveSqrt, simplifyRadicals, solveFactoring, ctsAccel, ctsHonors, formulaAccel, formulaHonors } from './alg2/solving.js?v=2.9';
+import { skill as holes } from './precalc/holes.js?v=3.0';
+import { skill as rationalSigns } from './precalc/rational-signs.js?v=3.0';
+import { arithmetic, geometric, geometricForms } from './precalc/sequences.js?v=3.0';
+import { skill as expEnd } from './precalc/exp-end-behavior.js?v=3.0';
+import { expModels, expRewrite } from './precalc/exp-models.js?v=3.0';
+import { skill as expBehavior } from './precalc/exp-behavior.js?v=3.0';
+import { expShifted, expUnits, expTwoPoints } from './precalc/exp-data.js?v=3.0';
+import { compExpr, compReps } from './precalc/composition.js?v=3.0';
+import { invTable, invGraph, invAlgebra } from './precalc/inverses.js?v=3.0';
+import { logConvert, logEval, logPlot } from './precalc/logs.js?v=3.0';
+import { skill as factoring } from './alg2/factoring.js?v=3.0';
+import { graphStandard, graphVertex } from './alg2/graphing.js?v=3.0';
+import { factoredFromGraph, factoredFromData, toVertexForm, vertexToStandard, maxMin, domainRange, coefFromSolutions, vertexFromPoint, incDec } from './alg2/forms.js?v=3.0';
+import { solveSqrt, simplifyRadicals, solveFactoring, ctsAccel, ctsHonors, formulaAccel, formulaHonors } from './alg2/solving.js?v=3.0';
 
-import { sqrtNegatives, powersOfI, complexOps } from './alg2/complex.js?v=2.9';
-import { perfectSquare, discriminant } from './alg2/solving-extra.js?v=2.9';
-import { projectile, circles } from './alg2/applications.js?v=2.9';
+import { sqrtNegatives, powersOfI, complexOps } from './alg2/complex.js?v=3.0';
+import { perfectSquare, discriminant } from './alg2/solving-extra.js?v=3.0';
+import { projectile, circles } from './alg2/applications.js?v=3.0';
 
-import { transTables, transIdentify, transPoint, transWrite, transDomain } from './alg2/transformations.js?v=2.9';
+import { transTables, transIdentify, transPoint, transWrite, transDomain } from './alg2/transformations.js?v=3.0';
 
-import { expLogNeither, expLogInversePoints, logBehavior, logTableK, logDomain, logCondense, logExpand, logTransformK } from './precalc/logs2.js?v=2.9';
-import { expEquations, logEqOne, logEqMulti, expLogInverses, expLogInequalities, logLinear, semiLogModel } from './precalc/logs3.js?v=2.9';
+import { expLogNeither, expLogInversePoints, logBehavior, logTableK, logDomain, logCondense, logExpand, logTransformK } from './precalc/logs2.js?v=3.0';
+import { seqClassify, expRulesTransform, inverseProps, changeOfBase, logDomainIneq, expModelsData } from './precalc/guide.js?v=3.0';
+import { expEquations, logEqOne, logEqMulti, expLogInverses, expLogInequalities, logLinear, semiLogModel } from './precalc/logs3.js?v=3.0';
 
 // Order shown on the home page. Each skill's `course` lists which courses see it
 // ('precalc', 'accel', 'honors'; see js/config.js).
 export const SKILLS = [
-  holes, rationalSigns, arithmetic, geometric, geometricForms, expEnd, expBehavior, expModels, expRewrite,
+  holes, rationalSigns, arithmetic, geometric, geometricForms, seqClassify, expEnd, expBehavior, expModels, expRewrite, expRulesTransform,
   expShifted, expUnits, expTwoPoints, compExpr, compReps, invTable, invGraph, invAlgebra, logConvert, logEval, logPlot,
-  expLogNeither, expLogInversePoints, logBehavior, logTableK, logDomain, logCondense, logExpand, logTransformK,
-  expEquations, logEqOne, logEqMulti, expLogInverses, expLogInequalities, logLinear, semiLogModel,
+  expLogNeither, expLogInversePoints, logBehavior, logTableK, logDomain, logCondense, logExpand, logTransformK, inverseProps, changeOfBase,
+  expEquations, logEqOne, logEqMulti, expLogInverses, expLogInequalities, logDomainIneq, expModelsData, logLinear, semiLogModel,
   factoring, simplifyRadicals, solveSqrt, solveFactoring, ctsAccel, ctsHonors, formulaAccel, formulaHonors,
   graphStandard, graphVertex, factoredFromGraph, factoredFromData, toVertexForm, vertexToStandard, maxMin, domainRange,
   sqrtNegatives, powersOfI, complexOps, transTables, transIdentify, transPoint, transWrite, transDomain, perfectSquare, discriminant, coefFromSolutions, vertexFromPoint, incDec, projectile, circles,

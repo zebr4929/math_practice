@@ -1,6 +1,6 @@
 // AP Precalculus 2.10–2.12: inverses of exponential functions, logarithmic functions, and log manipulation.
-import { F, randInt, pick, nonzero, shuffle } from '../../math.js?v=2.9';
-import { parseL, evalL, stripL, logsIn, varsL, previewL, valueChecker, intervalChecker, intervalTex, LOG_KEYS } from './logexpr.js?v=2.9';
+import { F, randInt, pick, nonzero, shuffle } from '../../math.js?v=3.0';
+import { parseL, evalL, stripL, logsIn, varsL, previewL, valueChecker, intervalChecker, intervalTex, LOG_KEYS } from './logexpr.js?v=3.0';
 
 const GROUP = 'Unit 2 - Logarithms';
 const fT = f => f.tex();
@@ -183,7 +183,7 @@ export const logBehavior = {
     const fx = `${name}(x) = ${coef(a)}${logHead(b)}\\left(${inside}\\right)${k ? ` ${k > 0 ? '+' : '-'} ${Math.abs(k)}` : ''}`;
     const edgeT = `${h}^{${s > 0 ? '+' : '-'}}`, farT = s > 0 ? '\\infty' : '-\\infty';
     const infTex = v => (v > 0 ? '$\\infty$' : '$-\\infty$');
-    const choices = ['Increasing and concave up', 'Increasing and concave down', 'Decreasing and concave up', 'Decreasing and concave down'];
+    const choices = ['Increasing, with the rate of change increasing (concave up)', 'Increasing, with the rate of change decreasing (concave down)', 'Decreasing, with the rate of change increasing (concave up)', 'Decreasing, with the rate of change decreasing (concave down)'];
     const answer = (inc ? 0 : 2) + (concaveDown ? 1 : 0);
     const parts = [];
     if (level < 3) {
@@ -295,9 +295,10 @@ export const logDomain = {
   levels: {
     1: { name: 'Easy', desc: 'Like 2log₃ x or log₂(x − 3)' },
     2: { name: 'Medium', desc: 'Like 8log(2x + 3)' },
-    3: { name: 'Challenging', desc: 'Fractions and negatives inside, like −2log_{1/3}(½x − 3)' },
+    3: { name: 'Challenging', desc: 'Fractions and negatives inside, like −2log_{1/3}(½x − 3), and writing a log with a given domain' },
   },
   generate(level, rng) {
+    if (level === 3 && rng() < 0.3) return writeLog(rng);
     let c, d;
     if (level === 1) { c = F(1); d = F(randInt(rng, -8, 8)); }
     else if (level === 2) { c = F(pick(rng, [2, 3, 4, 5])); d = F(nonzero(rng, -9, 9)); }
@@ -317,14 +318,44 @@ export const logDomain = {
       prompt: `Find the domain and range of $${fx}$.`,
       parts: [
         { type: 'custom', label: 'Domain:', check: intervalChecker([I]), keys: ['(', ')', '∞', '-', '/'], placeholder: 'e.g. (3, ∞)', answerTex: `$${domTex}$`, help: 'Use interval notation like (3, ∞), or an inequality like x > 3.' },
+        { type: 'number', label: 'Vertical asymptote: $x =$', answer: edge },
         { type: 'mc', label: 'Range:', choices: rangeChoices, answer: rangeChoices.indexOf('All real numbers') },
       ],
       solution: `The input of a log must be positive: $${inner} > 0$${c.eq(1) ? '' : `, so ${c.sign() < 0 ? `dividing by $${c.tex()}$ flips the inequality: ` : ''}$x ${c.sign() > 0 ? '>' : '<'} ${edge.tex()}$`}. Domain: $${domTex}$.<br>`
+        + `The vertical asymptote is at the edge of the domain, where the input of the log equals 0: $x = ${edge.tex()}$.${c.eq(1) ? '' : ` (Not $x = ${d.neg().tex()}$: divide by the coefficient of $x$.)`}${a.eq(1) && !k ? '' : ' The number in front of the log and the vertical shift do not move it.'}<br>`
         + 'Every log function takes on every real output (it goes to $\\pm\\infty$ at its two ends), and stretches, reflections and shifts do not change that. Range: all real numbers.',
       _check: { c: c.value(), d: d.value(), edge: edge.value(), I },
     };
   },
 };
+
+// write a log function with a given domain and end behavior
+function writeLog(rng) {
+  const K = nonzero(rng, -6, 6), left = rng() < 0.5, up = rng() < 0.5;        // left: domain x < K; up: approaches infinity at the far end
+  const farT = left ? '-\\infty' : '\\infty';
+  const inner = left ? `${K} - x` : `x ${K > 0 ? '-' : '+'} ${Math.abs(K)}`;
+  const ex = `${up ? '' : '-'}\\ln(${inner})`;
+  const check = str => {
+    let tree;
+    try { tree = parseL(String(str).includes('=') ? String(str).slice(String(str).lastIndexOf('=') + 1) : str); } catch { return { ok: false, msg: 'Could not read that. Example: ln(2 - x)', format: true }; }
+    for (const v of varsL(tree)) if (v !== 'x') return { ok: false, msg: 'Use x as the variable.', format: true };
+    if (!logsIn(tree).some(l => varsL(l.arg).has('x'))) return { ok: false, msg: 'Your function should be a logarithmic function of x.', format: true };
+    const s = left ? -1 : 1, f = x => { try { return evalL(tree, { x }); } catch { return NaN; } };
+    const inside = [0.001, 0.5, 3, 50, 1e4].every(t => isFinite(f(K + s * t)));
+    const outside = [0.001, 0.5, 3, 40].every(t => !isFinite(f(K - s * t)));
+    if (!inside || !outside) return { ok: false };
+    const trend = f(K + s * 1e7) - f(K + s * 1e4);
+    return { ok: up ? trend > 0.01 : trend < -0.01 };
+  };
+  return {
+    tag: 'write a log',
+    prompt: `Write a logarithmic function whose domain is $x ${left ? '<' : '>'} ${K}$ and whose values approach $${up ? '\\infty' : '-\\infty'}$ as $x \\to ${farT}$.`,
+    parts: [{ type: 'custom', label: '$f(x) =$', check, preview: previewL, keys: ['ln', 'log_', '(', ')', '-'], placeholder: 'e.g. ln(2 - x)', answerTex: `Answers vary, for example $${ex}$`, help: 'Type a function of x, like ln(2 - x) or -log(x + 3).' }],
+    solution: `The input of the log must be positive exactly when $x ${left ? '<' : '>'} ${K}$, so use $${inner}$ as the input${left ? ' (the $-x$ is a horizontal reflection, which puts the domain on the left)' : ''}.<br>`
+      + `As $x \\to ${farT}$, $${inner} \\to \\infty$, so $\\ln(${inner}) \\to \\infty$.${up ? '' : ' To approach $-\\infty$ instead, reflect vertically with a negative coefficient.'}<br>One answer: $f(x) = ${ex}$. Any base greater than 1 works the same way.`,
+    _check: { K, left, up, ex, check },
+  };
+}
 
 // =====================================================================
 // 6. Condensing logarithms (2.12)  and  7. Expanding logarithms (2.12)

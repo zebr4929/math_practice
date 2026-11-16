@@ -1,8 +1,8 @@
 // AP Precalculus 2.5: exponential context and data modeling.
 //  1. Data from a vertically shifted exponential: find k, then write y = ab^x + k.
 //  2. Percent growth/decay word problems where the units change (years to months, hours to minutes, ...).
-import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=2.9';
-import { rewriteChecker, rewritePreview } from './exp-models.js?v=2.9';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=3.0';
+import { rewriteChecker, rewritePreview } from './exp-models.js?v=3.0';
 
 const GROUP = 'Unit 2 - Sequences and Exponentials';
 
@@ -188,11 +188,14 @@ function buildUnits(level, rng) {
       placeholder: flip ? `e.g. ${a}(1.02)^(12${v})` : `e.g. ${a}(1.13)^(${v}/12)`, answerTex: `$${a}\\left(${bTex}^{${expoTex}}\\right)^{${v}} \\approx ${a}(${B2.toFixed(3)})^{${v}}$`,
       help: `Use ${v} as the variable. An exact form like ${a}(${bTex})^(${flip ? U.per + v : v + '/' + U.per}) is best; a base rounded to 3 decimals is also accepted.` });
     parts.push({ type: 'custom', label: `${cap(st.thing)} after ${N2} ${pl(otherUnit, N2)}:`, check: decimalChecker(ans2), placeholder: 'e.g. 67.863', answerTex: dec3(ans2) });
+    const pct2 = Math.abs(B2 - 1) * 100;
+    parts.push({ type: 'custom', label: `Percent ${st.grow ? 'growth' : 'decay'} rate per ${otherUnit}:`, check: pctChecker(pct2, B2), placeholder: 'e.g. 8.243', answerTex: `$${dec3(pct2)}\\%$`, help: 'Give the percent, rounded to 3 decimal places (the % sign is optional).' });
     steps.push(`${baseLine} In ${pl(rateUnit, 2)}: $${f}(t) = ${a}(${bTex})^{t}$.`);
     steps.push(flip
       ? `One ${otherUnit} is ${U.per} ${pl(rateUnit, 2)}, so $t = ${U.per}${v}$: $${f}(${v}) = ${a}(${bTex})^{${U.per}${v}} = ${a}\\left(${bTex}^{${U.per}}\\right)^{${v}} \\approx ${a}(${B2.toFixed(3)})^{${v}}$.`
       : `One ${otherUnit} is $\\tfrac{1}{${U.per}}$ of a ${rateUnit}, so $t = \\tfrac{${v}}{${U.per}}$: $${f}(${v}) = ${a}(${bTex})^{${v}/${U.per}} = ${a}\\left(${bTex}^{1/${U.per}}\\right)^{${v}} \\approx ${a}(${B2.toFixed(3)})^{${v}}$.`);
     steps.push(`$${f}(${N2}) = ${a}(${bTex})^{${convTex}} \\approx ${dec3(ans2)}$. Use the exact form here: rounding the base first can throw the answer off in the later decimal places.`);
+    steps.push(`Each ${otherUnit} multiplies by $${bTex}^{${expoTex}} \\approx ${B2.toFixed(6)}$, which is ${st.grow ? 'growth' : 'decay'} of $${st.grow ? `${B2.toFixed(6)} - 1` : `1 - ${B2.toFixed(6)}`} \\approx ${(Math.abs(B2 - 1)).toFixed(6)}$, or about $${dec3(Math.abs(B2 - 1) * 100)}\\%$ per ${otherUnit}.`);
   }
   return {
     tag: `${level === 1 ? 'model given' : level === 2 ? 'write model' : flip ? 'rewrite model, small to big unit' : 'rewrite model, big to small unit'}, ${st.grow ? 'growth' : 'decay'}`,
@@ -201,6 +204,20 @@ function buildUnits(level, rng) {
   };
 }
 const cap = s => s[0].toUpperCase() + s.slice(1);
+// percent rate from a base: accept the exact rate, or the rate from the base rounded to 5 or 6 decimals
+function pctChecker(pct, B) {
+  const targets = [pct, Math.abs(+B.toFixed(5) - 1) * 100, Math.abs(+B.toFixed(6) - 1) * 100];
+  return str => {
+    const s = String(str).replace(/\\?%/g, '').replace(/[−–]/g, '-').trim();
+    if (!s) return { ok: false, msg: 'Enter the percent.', format: true };
+    let v; try { v = evaluate(parse(s), {}); } catch { return { ok: false, msg: 'Enter a percent like 8.243.', format: true }; }
+    if (!isFinite(v)) return { ok: false, msg: 'Enter a percent like 8.243.', format: true };
+    if (targets.some(t => Math.abs(Math.abs(v) - t) <= 0.001 + 1e-9)) return { ok: true };
+    if (Math.abs(Math.abs(v) / 100 - pct) < 1e-3 * Math.max(1, pct)) return { ok: false, msg: 'Give the rate as a percent, not a decimal (0.08 is 8%).', format: true };
+    if (Math.abs(Math.abs(v) - pct) < 0.06) return { ok: false, msg: 'Close. Keep more decimal places in the base until the last step, then round the percent to 3 decimal places.', format: true };
+    return { ok: false };
+  };
+}
 
 // accepts any exponential A·B^v with A = a and B within 0.0005 of the exact base (or exact forms)
 function expChecker(v, a, B) {

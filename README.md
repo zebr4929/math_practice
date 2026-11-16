@@ -11,37 +11,43 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | AP Precalculus | Holes, Zeros & Asymptotes | Each factor appears once | Repeated factors | Every zero, asymptote and hole |
 | AP Precalculus | Leading Coefficients & Hole Values | Standard-form factors | Backwards factors like (2 - 3x) | Backwards factors with exponents |
 | AP Precalculus | Arithmetic Sequences | Rule from first terms | Rule from d and one term | Rule from two terms |
-| AP Precalculus | Geometric Sequences | Rule from first terms | Rule from r and one term | Rule from two terms |
-| AP Precalculus | End Behavior of Exponential Functions | From a graph | From the equation, no reflection | Reflected over the asymptote |
+| AP Precalculus | Geometric Sequences | Rule from first terms | Rule from r and one term | Rule from two terms, or the first term past a value |
+| AP Precalculus | 2.1 Arithmetic and Geometric Sequences | Arithmetic, geometric or neither, whole numbers | Fractions, decimals, negative ratios | Look-alikes |
+| AP Precalculus | End Behavior of Exponential Functions | From a graph | From the equation (plus above/below), or the four cases of a and b | Reflected over the asymptote, or write k + abˣ with given behavior |
 | AP Precalculus | Exponential Models from Geometric Sequences | Starting value and rate in words | Two data points, whole-number ratio | Two data points, fractional ratio |
 | AP Precalculus | Rewriting Exponentials in y = abˣ Form (a can be a fraction or negative) | One shift in the exponent | Coefficient on x or fractional exponent | Shifts with coefficients, negative exponents |
+| AP Precalculus | 2.4 Exponent Rules as Transformations | bˣ⁺ʰ two ways | b^(cx), (bˣ)ᶜ, b^(−x) | 1/f(cx); how far a·bˣ is translated |
 | AP Precalculus | Equivalent Forms of Geometric Rules | Pick the rule equivalent to a given rule | Match terms to a rule written from a different term | Same, with negative or fractional ratios |
-| AP Precalculus | Increasing, Decreasing and Concavity of Exponentials | From a table, positive outputs | From y = abˣ, a positive or negative | Tables with negative outputs, equations with shifts |
+| AP Precalculus | Increasing, Decreasing and Concavity of Exponentials (choices name the rate of change) | From a table, positive outputs | From y = abˣ, a positive or negative | Tables with negative outputs, equations with shifts |
 | AP Precalculus | 2.5 Exponential Data with a Vertical Shift | x from 0, whole-number base | Growth or decay, a can be negative | x not from 0, fractional bases |
 | AP Precalculus | 2.5 Writing y = abˣ from Two Points | One point on the y-axis | Write the system, then the equation | Decay, fractional bases, negative x, calculator data |
-| AP Precalculus | 2.5 Percent Growth and Decay with Changing Units | Model given, values in two units | Write the model, values in two units | Rewrite the model in other units |
+| AP Precalculus | 2.5 Percent Growth and Decay with Changing Units | Model given, values in two units | Write the model, values in two units | Rewrite the model in other units, and the new percent rate |
 | AP Precalculus | 2.7 Composition as an Expression | Linear and linear | Linear and quadratic | Square roots and rational functions |
 | AP Precalculus | 2.7 Composition with Multiple Representations | Table and equation | Graph, table, equation | Graph, table, piecewise, verbal; longer chains |
 | AP Precalculus | 2.8 Inverses from a Table | Read inverse values | Is the inverse a function? | Inverse of an inverse value |
 | AP Precalculus | 2.8 Graphing Inverses | Points | Segmented one-to-one graph | Graphs that may not be one-to-one |
-| AP Precalculus | 2.8 Finding Inverses Algebraically | Linear | Linear with fractions | Rational (ax + b)/(cx + d) |
+| AP Precalculus | 2.8 Finding Inverses Algebraically | Linear | Linear with fractions | Rational (ax + b)/(cx + d), domain and range of f and its inverse, self-inverse functions |
 | AP Precalculus | 2.9 Exponential and Logarithmic Form | Exponential to log, numbers | Log to exponential, log/ln/variables | Both directions, negative and fractional exponents |
 | AP Precalculus | 2.9 Evaluating Logarithms | Whole-number answers | Zero and negative answers | Fractional answers |
 | AP Precalculus | 2.9 Plotting on a Logarithmic Scale | Gridline values | Four decades, values below 1 | Values between gridlines, half-unit x |
 | AP Precalculus | 2.10 Exponential, Logarithmic, or Neither? | Clear patterns | Decreasing, negatives, ratios < 1 | Traps, and semi-log linear data |
 | AP Precalculus | 2.10 Using Exponential and Log Inverses | Swap a point | Log values from a table | Average rate of change of log_b x |
-| AP Precalculus | 2.11 Behavior of Logarithmic Functions | a > 0, b > 1 | Vertical and horizontal reflections | Horizontal shifts: students write the limit statements |
+| AP Precalculus | 2.11 Behavior of Logarithmic Functions (choices name the rate of change) | a > 0, b > 1 | Vertical and horizontal reflections | Horizontal shifts: students write the limit statements |
 | AP Precalculus | 2.11 Finding the Missing Input in a Log Table | k in the middle | k first or last | Shifted inputs, powers of e |
-| AP Precalculus | 2.11 Domain and Range of Logarithmic Functions | log_b(x − h) | Coefficient inside | Fractions and negatives inside |
+| AP Precalculus | 2.11 Domain and Range of Logarithmic Functions (plus the vertical asymptote) | log_b(x − h) | Coefficient inside | Fractions and negatives inside, or write a log with a given domain |
 | AP Precalculus | 2.12 Condensing Logarithms | Two terms | Coefficients | Several terms and constants |
 | AP Precalculus | 2.12 Expanding Logarithms | Products and quotients | Powers and numbers | Roots of fractions, factor first |
 | AP Precalculus | 2.12 Log Transformations as Translations and Dilations | Whole-number k | k = log 6 style | Change of base |
+| AP Precalculus | 2.12 Inverse Properties and Log Rules | e^(ln 7), ln(e^(4x)) | Coefficient into the exponent first | Compositions of e and ln |
+| AP Precalculus | 2.12 Change of Base | Common or natural logs, evaluate | Exact with a convenient base; select all equivalent | Solve bˣ = N as a single log, then approximate |
 | AP Precalculus | 2.13 Solving Exponential Equations | Isolate and convert | Shifted exponents, e | Common and unlike bases |
 | AP Precalculus | 2.13 Solving Equations with One Logarithm | Isolate and convert | Coefficients | Natural logs |
 | AP Precalculus | 2.13 Equations with Several Logarithms | log = log | Extraneous solutions | Intersections |
 | AP Precalculus | 2.13 Inverses of Exponential and Log Functions | Simple | Coefficients and shifts | Value of the inverse |
 | AP Precalculus | 2.13 Exponential and Log Inequalities | Exponential | One log with domain | Two logs with a quadratic |
-| AP Precalculus | 2.15 Log-Linear Form | y = ab^x to linear | Linear to y = ab^x | Contexts |
+| AP Precalculus | 2.13 Log Equations and Inequalities | Quadratic inequalities | Leading coefficient not 1 | Domain of a sum of logs |
+| AP Precalculus | 2.13 Exponential Models from Data | Model given, solve for t | From t = 0 and a later value | Neither point at 0, or percent remaining |
+| AP Precalculus | 2.15 Log-Linear Form | y = ab^x to linear | Linear to y = ab^x | Contexts, and tables of data |
 | AP Precalculus | 2.15 Models from a Semi-Log Plot | Point on the axis | Whole-number base | Decay, rounded base |
 | Accelerated + Honors | Factoring Quadratics | a = 1 | a prime, plus special products | a not prime |
 | Accelerated + Honors | Solving by Factoring | a = 1 | Prime a, special products, terms on both sides | Composite a, rearranging |

@@ -1,7 +1,7 @@
-import { SKILLS, byId } from './skills/index.js?v=2.9';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=2.9';
-import { CONFIG } from './config.js?v=2.9';
-import { makeGrid, makeLogGrid } from './graph.js?v=2.9';
+import { SKILLS, byId } from './skills/index.js?v=3.0';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.0';
+import { CONFIG } from './config.js?v=3.0';
+import { makeGrid, makeLogGrid } from './graph.js?v=3.0';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -232,6 +232,12 @@ function showProblem(state) {
         card.querySelectorAll(`[data-part="${k}"] .choice`).forEach(b => b.classList.remove('sel'));
         btn.classList.add('sel');
       });
+    } else if (part.type === 'multi') {      // select all that apply: each choice toggles
+      card.querySelectorAll(`[data-part="${k}"] .choice`).forEach(btn => btn.onclick = () => {
+        if (state.checked) return;
+        btn.classList.toggle('sel');
+        btn.setAttribute('aria-pressed', btn.classList.contains('sel'));
+      });
     } else {
       const inp = card.querySelector(`#in${k}`);
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('check')?.click(); });
@@ -266,6 +272,11 @@ function partHtml(part, k) {
     return `<div class="part" data-part="${k}"><div class="part-label">${part.label}</div>
       <div id="gr${k}"></div>${part.help ? `<div class="help">${esc(part.help)}</div>` : ''}<div class="fb"></div></div>`;
   }
+  if (part.type === 'multi') {
+    return `<div class="part" data-part="${k}"><div class="part-label">${part.label} <span class="muted">(select all that apply)</span></div>
+      <div class="choices multi">${part.choices.map((c, j) => `<button type="button" class="choice" aria-pressed="false" data-choice="${j}">${c}</button>`).join('')}</div>
+      <div class="fb"></div></div>`;
+  }
   if (part.type === 'mc') {
     return `<div class="part" data-part="${k}"><div class="part-label">${part.label}</div>
       <div class="choices">${part.choices.map((c, j) => `<button type="button" class="choice" data-choice="${j}">${c}</button>`).join('')}</div>
@@ -292,6 +303,7 @@ function answerTex(part) {
     case 'list': return part.answer.length ? part.answer.map(x => `$${Frac.of(x).tex()}$`).join(', ') : 'none';
     case 'point': return part.answer ? `$\\left(${Frac.of(part.answer[0]).tex()},\\ ${Frac.of(part.answer[1]).tex()}\\right)$` : 'none';
     case 'mc': return part.choices[part.answer];
+    case 'multi': return part.answers.map(j => part.choices[j]).join(', ');
     case 'rule': return 'see the worked solution';
   }
 }
@@ -310,6 +322,11 @@ function check(state) {
     } else if (part.type === 'mc') {
       const sel = box.querySelector('.choice.sel');
       r = sel ? { ok: +sel.dataset.choice === part.answer } : { ok: false, msg: 'Choose an answer.', format: true };
+    } else if (part.type === 'multi') {
+      const picked = [...box.querySelectorAll('.choice.sel')].map(b => +b.dataset.choice).sort((a, b) => a - b);
+      const want = [...part.answers].sort((a, b) => a - b);
+      r = !picked.length ? { ok: false, msg: 'Select every choice that applies.', format: true }
+        : { ok: picked.length === want.length && picked.every((j, i) => j === want[i]) };
     } else {
       const v = card.querySelector(`#in${k}`).value;
       r = part.check ? part.check(v)
@@ -332,6 +349,7 @@ function check(state) {
     box.classList.add(r.ok ? 'ok' : 'no');
     box.querySelectorAll('input').forEach(i => i.readOnly = true);
     if (part.type === 'mc') box.querySelector(`[data-choice="${part.answer}"]`).classList.add('correct');
+    if (part.type === 'multi') part.answers.forEach(j => box.querySelector(`[data-choice="${j}"]`).classList.add('correct'));
     if (part.type === 'graph') state.grids[k].reveal({ fn: part.fn, correct: part.correct });
     box.querySelector('.fb').innerHTML = r.ok
       ? `<span class="mark-ok">✓ Correct</span>`
@@ -352,6 +370,7 @@ function reveal(state) {
     box.classList.add('shown');
     box.querySelectorAll('input').forEach(i => { i.readOnly = true; });
     if (part.type === 'mc') box.querySelector(`[data-choice="${part.answer}"]`).classList.add('correct');
+    if (part.type === 'multi') part.answers.forEach(j => box.querySelector(`[data-choice="${j}"]`).classList.add('correct'));
     if (part.type === 'graph') state.grids[k].reveal({ fn: part.fn, correct: part.correct });
     box.querySelector('.fb').innerHTML = `<span class="mark-shown">Answer:</span> <span>${answerTex(part)}</span>`;
   });

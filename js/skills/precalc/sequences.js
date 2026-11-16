@@ -1,5 +1,5 @@
 // Skills: arithmetic and geometric sequence rules (Lesson 2.1)
-import { F, Frac, randInt, pick, nonzero, paren, signed } from '../../math.js?v=2.9';
+import { F, Frac, randInt, pick, nonzero, paren, signed, parse, evaluate } from '../../math.js?v=3.0';
 
 const LEVELS = {
   1: { name: 'Easy', desc: 'Write the rule from the first few terms' },
@@ -25,8 +25,8 @@ export const geometric = {
   group: 'Unit 2 - Sequences and Exponentials',
   lesson: '2.1',
   blurb: 'Write a rule for gₙ and use it to find a later term.',
-  levels: LEVELS,
-  generate(level, rng) { return geom(level, rng); },
+  levels: { ...LEVELS, 3: { name: 'Challenging', desc: 'Write the rule from two terms, or find the first term past a value' } },
+  generate(level, rng) { return level === 3 && rng() < 0.4 ? firstPast(rng) : geom(level, rng); },
 };
 
 const RULE_HELP = 'Type the right side only. Examples: 4 + 3(n - 1) or 12(2)^(n - 1)';
@@ -198,6 +198,56 @@ function geom(level, rng) {
     ],
     solution: `${given}<br>Rule: $${geomRuleTex('g', g1, r)}$ (any equivalent form is correct).<br>`
       + `$g_{${N}} = ${g1.tex()}\\left(${r.tex()}\\right)^{${N - 1}} = ${gN.tex()}$${!gN.isInt() && gN.terminatingDecimal() ? ` $= ${gN.terminatingDecimal()}$` : ''}.`,
+  };
+}
+
+// ---------- the first term past a value: solve g_1 r^(n-1) > M with logs ----------
+function firstPast(rng) {
+  const tidy = x => +x.toFixed(6);
+  for (let t = 0; t < 400; t++) {
+    const grow = rng() < 0.65;
+    const r = grow ? pick(rng, [1.5, 1.2, 1.25, 2, 3, 1.1, 1.4]) : pick(rng, [0.8, 0.5, 0.75, 0.6, 0.9]);
+    const g1 = grow ? pick(rng, [2, 3, 4, 5, 6, 8, 10, 12]) : pick(rng, [500, 800, 1000, 2000, 640, 250]);
+    const j = pick(rng, [1, 1, 2]);
+    const g = n => g1 * Math.pow(r, n - 1);
+    const gj = tidy(g(j)), gk = tidy(g(j + 1));
+    if (Math.abs(gj - g(j)) > 1e-9 || Math.abs(gk - g(j + 1)) > 1e-9) continue;   // shown values must be exact
+    const M = grow ? pick(rng, [50, 100, 200, 500, 1000]) : pick(rng, [1, 5, 10, 20, 50]);
+    if (grow ? M <= gk * 1.5 : M >= gk / 1.5) continue;
+    let n = 1; while (!(grow ? g(n) > M : g(n) < M) && n < 60) n++;
+    if (n >= 60 || n <= j + 1) continue;
+    if (Math.abs(g(n) - M) < 1e-9 || Math.abs(g(n - 1) - M) < 1e-9) continue;
+    const X = Math.log(M / g1) / Math.log(r);           // n - 1 > X
+    if (Math.abs(X - Math.round(X)) < 1e-6 || Math.floor(X) + 2 !== n) continue;
+    const word = grow ? 'greater' : 'less', op = grow ? '>' : '<';
+    const gn = g(n), gnTex = Math.abs(gn - tidy(gn)) < 1e-9 && String(tidy(gn)).length <= 10 ? String(tidy(gn)) : `${g1}(${r})^{${n - 1}} \\approx ${(Math.round(gn * 1000) / 1000).toFixed(3)}`;
+    const truth = k => g(k);
+    return {
+      tag: grow ? 'first term greater than M' : 'first term less than M',
+      prompt: `A geometric sequence has $g_{${j}} = ${gj}$ and $g_{${j + 1}} = ${gk}$. Write a rule for $g_n$. Then write an inequality whose solution tells you which terms are ${word} than ${M}, and find the first term ${word} than ${M}.`,
+      parts: [
+        { type: 'rule', label: '$g_n =$', truth, var: 'n', placeholder: `e.g. ${g1}(${r})^(n - 1)`, help: RULE_HELP, answerTex: `$${g1}\\left(${r}\\right)^{n-1}$` },
+        { type: 'number', label: `The first term ${word} than ${M} is term number $n =$`, answer: F(n) },
+        { type: 'custom', label: 'The value of that term:', check: firstValueChecker(gn), placeholder: 'e.g. 102.516', answerTex: `$${gnTex}$`, help: 'Exact, or rounded to 3 decimal places.' },
+      ],
+      solution: `$r = \\dfrac{g_{${j + 1}}}{g_{${j}}} = \\dfrac{${gk}}{${gj}} = ${r}$${j === 1 ? '' : `, and $g_1 = \\dfrac{${gj}}{${r}} = ${g1}$`}. Rule: $g_n = ${g1}(${r})^{n-1}$.<br>`
+        + `Inequality: $${g1}(${r})^{n-1} ${op} ${M}$, so $(${r})^{n-1} ${op} ${F(M, g1).tex()}$. Take the natural log of both sides: $(n - 1)\\ln ${r} ${op} \\ln\\left(${F(M, g1).tex()}\\right)$.<br>`
+        + `${grow ? `$\\ln ${r} > 0$, so divide normally` : `$\\ln ${r} < 0$, so dividing by it flips the inequality`}: $n - 1 > \\dfrac{\\ln(${F(M, g1).tex()})}{\\ln ${r}} \\approx ${X.toFixed(3)}$.<br>`
+        + `The smallest whole number above $${X.toFixed(3)}$ is $${Math.floor(X) + 1}$, so $n - 1 = ${Math.floor(X) + 1}$ and $n = ${n}$. Check: $g_{${n - 1}} \\approx ${(Math.round(g(n - 1) * 1000) / 1000).toFixed(3)}$ is not ${word} than ${M}, but $g_{${n}} \\approx ${(Math.round(gn * 1000) / 1000).toFixed(3)}$ is.`,
+      _check: { g1, r, M, n, grow, gn },
+    };
+  }
+  throw new Error('geometric first-past: could not build');
+}
+function firstValueChecker(target) {
+  return str => {
+    const s = String(str).replace(/[−–]/g, '-').replace(/,/g, '').trim();
+    if (!s) return { ok: false, msg: 'Enter the value of the term.', format: true };
+    let v; try { v = evaluate(parse(s), {}); } catch { return { ok: false, msg: 'Enter a number, like 102.516, or an exact form like 6(1.5)^7.', format: true }; }
+    if (!isFinite(v)) return { ok: false, msg: 'Enter a number.', format: true };
+    if (Math.abs(v - target) <= 0.001 + 1e-9 * Math.abs(target)) return { ok: true };
+    if (Math.abs(v - target) < 0.02 && /\.\d{0,2}$/.test(s)) return { ok: false, msg: 'Close. Give it to 3 decimal places (or exact).', format: true };
+    return { ok: false };
   };
 }
 

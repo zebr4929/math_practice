@@ -1,7 +1,7 @@
 // AP Precalculus 2.13 and 2.15: exponential and log equations, inverses and inequalities; semi-log plots.
-import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=2.9';
-import { parseL, evalL, varsL, previewL, valueChecker, listChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=2.9';
-import { logHead } from './logs2.js?v=2.9';
+import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=3.0';
+import { parseL, evalL, varsL, previewL, valueChecker, listChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=3.0';
+import { logHead } from './logs2.js?v=3.0';
 
 const GROUP = 'Unit 2 - Log Equations and Semi-Log Plots';
 const d3 = v => (Math.round(v * 1000) / 1000).toFixed(3);
@@ -379,9 +379,10 @@ export const logLinear = {
   levels: {
     1: { name: 'Easy', desc: 'Write the linear model for y = abˣ' },
     2: { name: 'Medium', desc: 'Write y = abˣ from a linear model, and growth or decay' },
-    3: { name: 'Challenging', desc: 'Contexts: initial value and growth rate from log B = 0.15t + 2.3' },
+    3: { name: 'Challenging', desc: 'Contexts like log B = 0.15t + 2.3, and tables of data' },
   },
   generate(level, rng) {
+    if (level === 3 && rng() < 0.4) return logLinearTable(rng);
     const base = level === 1 ? pick(rng, [10, 10, 2, 'e']) : pick(rng, [10, 10, 2, 'e']);
     const lg = v => (base === 10 ? Math.log10(v) : base === 2 ? Math.log2(v) : Math.log(v));
     const L = logHead(base);
@@ -432,6 +433,35 @@ export const logLinear = {
   },
 };
 
+// a table of exponential data: equal differences in log y, then y = ab^x and log y = mx + k
+function logLinearTable(rng) {
+  for (let t = 0; t < 200; t++) {
+    const a = pick(rng, [2, 3, 5, 4]), R = pick(rng, [2, 3, 4]), s = pick(rng, [1, 2, 5]);
+    const xs = [0, 1, 2, 3, 4].map(i => i * s), ys = [0, 1, 2, 3, 4].map(i => a * Math.pow(R, i));
+    if (ys[4] > 2000) continue;
+    const b = Math.pow(R, 1 / s), m = Math.log10(b), k = Math.log10(a), diff = Math.log10(R);
+    const bTex = s === 1 ? String(R) : `${R}^{1/${s}}`;
+    const visual = `<table class="seq-table"><tr><th>$x$</th>${xs.map(x => `<th>${x}</th>`).join('')}</tr><tr><th>$y$</th>${ys.map(y => `<td>$${y}$</td>`).join('')}</tr></table>`;
+    return {
+      tag: 'table of data',
+      prompt: 'Use the data in the table. Find $\\log y$ for each point and the difference between consecutive values. Then write an exponential model $y = ab^x$ and its log-linear form $\\log y = mx + k$.',
+      visual,
+      parts: [
+        valuePart('Difference between consecutive values of $\\log y$:', diff, `\\log ${R}`, 'e.g. 0.602'),
+        { type: 'number', label: '$a =$', answer: F(a) },
+        valuePart('$b =$', b, bTex, 'e.g. 1.320'),
+        valuePart('Slope $m =$', m, s === 1 ? `\\log ${R}` : `\\tfrac{1}{${s}}\\log ${R}`, 'e.g. 0.120'),
+        valuePart('Intercept $k =$', k, `\\log ${a}`, 'e.g. 0.477'),
+      ],
+      solution: `$\\log y$ values: $${ys.map(y => d3(Math.log10(y))).join(',\\ ')}$. Each difference is about $${d3(diff)} = \\log ${R}$, so the points fall on a line on a semi-log plot: the data is exponential.<br>`
+        + `At $x = 0$, $y = ${a}$, so $a = ${a}$. ${s === 1 ? `Each step of 1 in $x$ multiplies $y$ by ${R}, so $b = ${R}$.` : `Each step of ${s} in $x$ multiplies $y$ by ${R}, so $b^{${s}} = ${R}$ and $b = ${bTex} \\approx ${d3(b)}$.`}<br>`
+        + `Log-linear form: $\\log y = (\\log b)x + \\log a$, so $m = \\log b${s === 1 ? '' : ` = \\tfrac{1}{${s}}\\log ${R}`} \\approx ${d3(m)}$ and $k = \\log ${a} \\approx ${d3(k)}$.`,
+      _check: { a, R, s, b, m, k, diff },
+    };
+  }
+  throw new Error('log-linear table: could not build');
+}
+
 // =====================================================================
 // 15. Models from a semi-log plot (2.15)
 // =====================================================================
@@ -477,3 +507,4 @@ export const semiLogModel = {
   },
 };
 void gcd;
+export { solveSet, setTex, asNums, test as testOp, opT, OPS };

@@ -32,7 +32,15 @@ for (const s of SKILLS) for (const L of [1,2,3]) {
       }
     }
     // independent checks
-    if (s.id === 'arithmetic' || s.id === 'geometric') {
+    if (s.id === 'geometric' && p.tag.startsWith('first term')) {
+      // brute force: the first n with g_n past M, and its value
+      const { g1, r, M, grow } = p._check; const g = n => g1 * Math.pow(r, n - 1);
+      let n = 1; while (!(grow ? g(n) > M : g(n) < M)) n++;
+      if (p.parts[1].answer.value() !== n) fail('first past n', p);
+      if (!p.parts[2].check(String(g(n))).ok || !p.parts[2].check((Math.round(g(n) * 1000) / 1000).toFixed(3)).ok) fail('first past value own', p);
+      if (p.parts[2].check(String(g(n - 1))).ok) fail('first past accepts previous term', p);
+      const shown = [...p.prompt.matchAll(/g_\{(\d+)\} = ([\d.]+)/g)]; for (const m of shown) if (Math.abs(g(+m[1]) - +m[2]) > 1e-9) fail('first past shown term', p);
+    } else if (s.id === 'arithmetic' || s.id === 'geometric') {
       const rule = p.parts[0].truth, Npart = p.parts[1];
       const N = +Npart.label.match(/_\{(\d+)\}/)[1];
       if (Math.abs(rule(N) - Frac.of(Npart.answer).value()) > 1e-6 * Math.max(1, Math.abs(rule(N)))) fail('term mismatch', p);
@@ -193,7 +201,25 @@ console.log('problems', count, 'errors', errors);
   }
   for (const L of [1, 2, 3]) for (let seed = 1; seed <= 3000; seed++) {
     const p = expEnd.generate(L, makeRng(seed * 31 + L));
+    if (p.tag === 'four cases') {
+      const { aPos, bBig } = p._check, A = aPos ? 2 : -2, Bb = bBig ? 2 : 0.5, f = x => 3 + A * Math.pow(Bb, x);
+      if (p.parts[0].answer !== (f(1) > f(0) ? 0 : 1)) B('cases inc', p);
+      if (p.parts[1].answer !== (f(0) > 3 ? 0 : 1)) B('cases above', p);
+      if (p.parts[2].answer !== (Math.abs(f(60) - 3) < 1e-6 ? 0 : 1)) B('cases limit', p);
+      continue;
+    }
+    if (p.tag === 'write a function') {
+      const { K, inc, right, check, ex } = p._check;
+      if (!check(ex).ok) B('write own ' + ex, p);
+      const aS = (inc !== right) ? 1 : -1;   // sign of a that works
+      const good = `${aS > 0 ? '' : '-'}5(${right ? '1/3' : '3'})^x + ${K}`;
+      if (!check(good).ok) B('write alt ' + good, p);
+      for (const bad of [`${K + 1} ${aS > 0 ? '+' : '-'} 2(${right ? '0.5' : '2'})^x`, `${K} ${aS > 0 ? '-' : '+'} 2(${right ? '0.5' : '2'})^x`, `${K} ${aS > 0 ? '+' : '-'} 2(${right ? '2' : '0.5'})^x`, `${K} + 2x`])
+        if (check(bad).ok) B('write accepts ' + bad, p);
+      continue;
+    }
     const { a, k, left, right, fn } = p._check;
+    if (L > 1 && p.parts[2].answer !== (a > 0 ? 0 : 1)) B('above/below', p);
     const num = (x, want) => want.inf ? Math.sign(fn(x)) === want.inf && Math.abs(fn(x)) > 1e3 : Math.abs(fn(x) - want.value) < 1e-3;
     if (!num(-60, left) || !num(60, right)) B('limits', p);
     const str = w => w.inf ? (w.inf > 0 ? '∞' : '-∞') : String(w.value);
@@ -426,7 +452,15 @@ console.log('problems', count, 'errors', errors);
     { const p = D.expUnits.generate(L, R(seed, L, 2)), c = p._check;
       const want2 = c.a * Math.pow(c.b, c.flip ? c.N2 * c.per : c.N2 / c.per);
       if (Math.abs(want2 - c.ans2) > 1e-6 * want2) B('units conversion', p);
-      const last = p.parts[p.parts.length - 1].check;
+      const last = p.parts.filter(q => / after /.test(q.label)).pop().check;
+      if (L === 3) {
+        // percent rate per the new unit: exact base and from the base, and percent vs decimal
+        const B2 = c.flip ? Math.pow(c.b, c.per) : Math.pow(c.b, 1 / c.per), pct = Math.abs(B2 - 1) * 100, pc = p.parts[p.parts.length - 1].check;
+        if (!pc(pct.toFixed(3)).ok || !pc(pct.toFixed(3) + '%').ok) B('pct own', p);
+        if (pc((pct / 100).toFixed(5)).ok) B('pct decimal accepted', p);
+        if (pc((pct + 0.5).toFixed(3)).ok) B('pct wrong accepted', p);
+        const orig = Math.abs(c.b - 1) * 100; if (Math.abs(orig - pct) > 0.01 && pc(orig.toFixed(3)).ok) B('pct original unit accepted', p);
+      }
       if (!last(want2.toFixed(3)).ok) B('3dp rejected', p);
       if (Math.abs(want2 - Math.round(want2 * 100) / 100) > 0.0011 && last((Math.round(want2 * 100) / 100).toFixed(2)).ok) B('2dp accepted', p);
       const wrong = c.a * Math.pow(c.b, c.N2); if (Math.abs(wrong - want2) > 0.01 && last(wrong.toFixed(3)).ok) B('unit mistake accepted', p);
@@ -704,4 +738,100 @@ console.log('problems', count, 'errors', errors);
   }
   console.log('logs chapter check: bad =', bad); errors += bad;
 }
+
+// ---------- Unit 2 study guide skills (guide.js) and the parts added for them ----------
+{
+  let bad = 0; const B = (m, p) => { if (bad++ < 12) console.log('GUIDE FAIL', m, JSON.stringify(p?.prompt)?.slice(0, 220)); };
+  const G = await import('../js/skills/precalc/guide.js' + v);
+  const { parseL, evalL } = await import('../js/skills/precalc/logexpr.js' + v);
+  const Lg2 = await import('../js/skills/precalc/logs2.js' + v), Lg3 = await import('../js/skills/precalc/logs3.js' + v), Inv = await import('../js/skills/precalc/inverses.js' + v);
+  const typed = tex => { let t = tex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\cdot/g, '*').replace(/\\,/g, ' ').replace(/\\infty/g, '∞').replace(/\\cup/g, '∪').replace(/\\ /g, ' '), prev;
+    do { prev = t; t = t.replace(/\\d?t?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\[3\]\{([^{}]*)\}/g, '(($1)^(1/3))').replace(/\\sqrt\{([^{}]*)\}/g, 'sqrt($1)').replace(/\^\{([^{}]*)\}/g, '^($1)').replace(/\\log_\{([^{}]*)\}/g, 'log_($1)'); } while (t !== prev);
+    return t.replace(/\\log/g, 'log').replace(/\\ln/g, 'ln').replace(/[{}]/g, '').replace(/\\displaystyle/g, ''); };
+  const ev = (tex, x) => evalL(parseL(typed(tex)), x === undefined ? {} : { x });
+  const near = (a, b, tol = 1e-9) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(b));
+  const inI = (I, x) => I.some(s => (x > s.lo || (s.lc && x === s.lo)) && (x < s.hi || (s.rc && x === s.hi)));
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 1500; seed++) {
+    const R = salt => makeRng((seed * 2654435761 + L * 97 + salt * 7) >>> 0);
+    // 1. arithmetic, geometric, or neither
+    { const p = G.seqClassify.generate(L, R(1)), c = p._check, t = c.terms;
+      const d = t.slice(1).map((x, i) => x - t[i]), r = t.slice(1).map((x, i) => x / t[i]), cst = a => a.every(u => near(u, a[0]));
+      const kind = cst(d) ? 'arith' : cst(r) ? 'geom' : 'neither';
+      if (kind !== c.kind || p.parts[0].answer !== ['arith', 'geom', 'neither'].indexOf(kind)) B('classify', p);
+      const rc = p.parts[1].check;
+      if (kind === 'neither') { if (!rc('none').ok || rc(String(d[0])).ok) B('classify none', p); }
+      else { const want = kind === 'arith' ? d[0] : r[0]; if (!rc(String(+want.toFixed(10))).ok || rc('none').ok || rc(String(want + 1)).ok) B('classify rate', p); } }
+    // 2. exponent rules as transformations
+    { const p = G.expRulesTransform.generate(L, R(2)), c = p._check;
+      for (const pt of p.parts) if (pt.type === 'mc' && (new Set(pt.choices).size !== pt.choices.length || !(pt.answer >= 0))) B('rules mc', p);
+      if (L === 1) { for (const x of [-1.3, 0.4, 2.2]) if (!near(Math.pow(c.b, x + c.h), c.factor * Math.pow(c.b, x))) B('rules factor', p);
+        if (!p.parts[0].choices[p.parts[0].answer].includes(c.h > 0 ? 'left' : 'right') || !p.parts[0].choices[p.parts[0].answer].includes('horizontal')) B('rules dir', p); }
+      if (L === 2) { const mc = p.parts[0], pick0 = mc.choices[mc.answer];
+        if (c.c !== undefined) { const g = x => Math.pow(c.b, c.c * x); for (const x of [-1.1, 0.7, 2.3]) if (!near(g(x), Math.pow(c.B, x))) B('rules B', p);
+          if (!pick0.includes('horizontal dilation') || !pick0.includes(typedFrac(1 / c.c))) B('rules dilation ' + pick0, p);
+          if (!p.parts[1].check(typed(p.parts[1].answerTex.split('$')[1])).ok) B('rules B own', p); }
+        else if (!pick0.includes('$y$-axis') || !near(p.parts[1].answer.value(), c.B)) B('rules reflection', p); }
+      if (L === 3) {
+        if (c.k !== undefined) { const f = x => Math.pow(c.b, x); for (const x of [-0.8, 0.6, 1.9]) { const h = 1 / f(-c.k * x); if (!near(h, Math.pow(c.b, c.k * x)) || !near(h, Math.pow(c.B, x))) B('rules recip', p); }
+          if (!p.parts[2].check(typed(p.parts[2].answerTex.split('$')[1])).ok) B('rules recip own', p); }
+        else { for (const x of [-1, 0.5, 2]) if (!near(c.A * Math.pow(c.b, x), Math.pow(c.b, x + c.shift))) B('rules shift', p);
+          if (!p.parts[0].check(String(Math.abs(c.shift))).ok || p.parts[1].answer !== (c.shift > 0 ? 0 : 1)) B('rules shift answer', p); } } }
+    // 3. inverse properties
+    { const p = G.inverseProps.generate(L, R(3)), c = p._check;
+      for (const pt of p.parts) { const t = typed(pt.answerTex.split('$')[1]); if (!pt.check(t).ok) B('invprops own ' + t, p); }
+      if (L < 3) { const given = p.prompt.split('$')[1].replace(/^\\;/, ''); const tr = c.truth;
+        for (const x of [0.6, 1.7, 3.2]) if (!near(ev(given, x), tr(x), 1e-8)) B('invprops given ' + given, p);
+        if (p.parts[0].check(typed(given)).ok) B('invprops unsimplified accepted ' + given, p); }
+      else { const f = parseL(typed(c.fT)), g = parseL(typed(c.gT));
+        for (const x of [0.6, 1.7, 3.2]) { if (!near(evalL(f, { x: evalL(g, { x }) }), c.fg(x), 1e-8) || !near(evalL(g, { x: evalL(f, { x }) }), c.gf(x), 1e-8)) B('invprops composition', p); } } }
+    // 4. change of base
+    { const p = G.changeOfBase.generate(L, R(4)), c = p._check;
+      if (L === 1) { const t = typed(p.parts[0].answerTex.split('$')[1]); if (!p.parts[0].check(t).ok) B('cob own ' + t, p);
+        const other = t.includes('ln') ? t.replace(/ln/g, 'log') : t.replace(/log/g, 'ln'); const r = p.parts[0].check(other); if (r.ok || !r.msg) B('cob other base ' + other, p);
+        if (!p.parts[1].check(c.v.toFixed(3)).ok) B('cob value', p); }
+      if (L === 2 && p.tag.startsWith('exact')) { if (!near(Math.log(c.N) / Math.log(c.b), c.ans)) B('cob exact', p); }
+      if (L === 2 && p.tag === 'select all') { const pt = p.parts[0];
+        pt.choices.forEach((ch, i) => { const val = ev(ch.replace(/\$/g, '')); if (near(val, c.target) !== pt.answers.includes(i)) B('cob select ' + ch, p); }); }
+      if (L === 3) { if (!near(c.k * Math.pow(c.b, c.x) + c.m, c.rhs)) B('cob solve', p);
+        const s1 = p.parts[0].check; if (!s1(`log_${c.b}(${c.N})`).ok || s1(`ln(${c.N})/ln(${c.b})`).ok || !s1(c.x.toFixed(3)).format) B('cob single log', p);
+        if (!p.parts[1].check(c.x.toFixed(3)).ok) B('cob approx', p); } }
+    // 5. quadratic inequalities and log domains
+    { const p = G.logDomainIneq.generate(L, R(5)), c = p._check, pt = p.parts[0];
+      if (!pt.check(typed(pt.answerTex.split('$')[1])).ok) B('quad own', p);
+      if (L < 3) { const poly = p.prompt.split('$')[1].replace(/^\\;/, '').split(/\\le|\\ge|<|>/)[0];
+        for (let x = -10; x <= 10; x += 0.173) { if (!near(ev(poly, x), c.P(x), 1e-7)) { B('quad poly', p); break; }
+          const want = c.op === '<' ? c.P(x) < 0 : c.op === '>' ? c.P(x) > 0 : c.op === '<=' ? c.P(x) <= 1e-12 : c.P(x) >= -1e-12; if (inI(c.I, x) !== want) { B('quad set at ' + x, p); break; } } }
+      else { const fx = p.prompt.split('$')[1].replace(/^f\(x\) = /, '');
+        for (let x = -12; x <= 12; x += 0.137) if (inI(c.I, x) !== isFinite(ev(fx, x))) { B('domain set at ' + x.toFixed(3), p); break; } } }
+    // 6. exponential models from data
+    { const p = G.expModelsData.generate(L, R(6)), c = p._check, tP = p.parts[p.parts.length - 1];
+      if (L === 1) { if (!near(c.a * Math.pow(c.b, c.t / c.per), c.C, 1e-9)) B('models L1', p); }
+      if (L === 2) { if (!near(c.a * Math.pow(c.b, c.k), c.Y, 1e-9) || !near(c.a * Math.pow(c.b, c.t), c.C, 1e-9)) B('models L2', p);
+        const b3 = Math.round(c.b * 1000) / 1000; if (!tP.check((Math.log(c.C / c.a) / Math.log(b3)).toFixed(3)).ok) B('models rounded b', p); }
+      if (L === 3 && c.Y1) { if (!near(c.A * Math.pow(c.b, c.t1), c.Y1, 1e-9) || !near(c.A * Math.pow(c.b, c.t2), c.Y2, 1e-9) || !near(c.A * Math.pow(c.b, c.t), c.C, 1e-9)) B('models L3', p); }
+      if (L === 3 && c.p) { if (!near(Math.pow(c.b, c.T), c.p / 100) || !near(Math.pow(c.b, c.t), c.q / 100)) B('models pct', p); }
+      if (!tP.check(c.t.toFixed(3)).ok || tP.check((c.t + 0.5).toFixed(3)).ok) B('models t answer', p);
+      if (c.t <= 0) B('models t positive', p); }
+    // added parts: log domain asymptote and write-a-log
+    { const p = Lg2.logDomain.generate(L, R(7)), c = p._check;
+      if (p.tag === 'write a log') { if (!p.parts[0].check(typed(c.ex)).ok) B('writelog own ' + c.ex, p);
+        const inner = c.left ? `${c.K} - x` : `x - (${c.K})`, flipped = c.left ? `x - (${c.K})` : `${c.K} - x`;
+        if (!p.parts[0].check(`${c.up ? '' : '-'}log_2(${inner})`).ok) B('writelog alt', p);
+        if (p.parts[0].check(`${c.up ? '' : '-'}ln(${flipped})`).ok || p.parts[0].check(`${c.up ? '-' : ''}ln(${inner})`).ok) B('writelog wrong accepted', p); }
+      else { const va = p.parts.find(q => q.type === 'number'); if (!va || Math.abs(c.c * va.answer.value() + c.d) > 1e-12) B('log VA', p); } }
+    // added parts: inverse domain and range, self-inverse
+    if (L === 3) { const p = Inv.invAlgebra.generate(3, R(8)), c = p._check;
+      const nums = p.parts.filter(q => q.type === 'number').map(q => q.answer.value());
+      if (nums.length !== 4) B('inv dr count', p);
+      else { if (isFinite(c.fwd(nums[0])) || !near(c.fwd(1e9), nums[1], 1e-6) || isFinite(c.truth(nums[2])) || !near(c.truth(1e9), nums[3], 1e-6)) B('inv domain/range', p); }
+      const self = [0.3, 1.7, -2.4].every(x => !isFinite(c.fwd(x)) || near(c.truth(x), c.fwd(x)));
+      const mc = p.parts.find(q => q.type === 'mc'); if (!!mc !== self) B('inv self-inverse flag', p); if (mc && !mc.choices[mc.answer].startsWith('It is the same')) B('inv self mc', p); }
+    // added: log-linear table
+    { const p = Lg3.logLinear.generate(3, R(9)); if (p.tag === 'table of data') { const c = p._check;
+      for (let i = 0; i <= 4; i++) if (!near(c.a * Math.pow(c.b, i * c.s), c.a * Math.pow(c.R, i))) B('loglin table', p);
+      if (!near(c.m, Math.log10(c.b)) || !near(c.diff, c.m * c.s)) B('loglin table m', p); } }
+  }
+  console.log('study guide check: bad =', bad); errors += bad;
+}
+function typedFrac(v) { const f = [1, 2, 3, 4].map(d => [Math.round(v * d), d]).find(([n, d]) => Math.abs(n / d - v) < 1e-9); return f[1] === 1 ? `$${f[0]}$` : `\\frac{${f[0]}}{${f[1]}}`; }
 console.log('total errors', errors);

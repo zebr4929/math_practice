@@ -1,6 +1,6 @@
 // AP Precalculus, Unit 2: increasing/decreasing and concavity of exponential functions,
 // from a table of values or from the equation.
-import { F, randInt, pick } from '../../math.js?v=2.9';
+import { F, randInt, pick } from '../../math.js?v=3.0';
 
 export const skill = {
   id: 'exp-behavior',
@@ -21,10 +21,10 @@ export const skill = {
 };
 
 const CHOICES = [
-  'Always decreasing, and the graph is always concave up',
-  'Always decreasing, and the graph is always concave down',
-  'Always increasing, and the graph is always concave up',
-  'Always increasing, and the graph is always concave down',
+  'Always decreasing, with the rate of change increasing (concave up)',
+  'Always decreasing, with the rate of change decreasing (concave down)',
+  'Always increasing, with the rate of change increasing (concave up)',
+  'Always increasing, with the rate of change decreasing (concave down)',
 ];
 const BASES = [F(2), F(3), F(4), F(5), F(3, 2), F(1, 2), F(1, 3), F(1, 4), F(2, 3)];
 const coefTex = a => (a.eq(1) ? '' : a.eq(-1) ? '-' : a.tex());

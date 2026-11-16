@@ -1,5 +1,5 @@
 // AP Precalculus 2.8: inverse functions from a table, from a graph, and algebraically.
-import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=2.9';
+import { F, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=3.0';
 
 const GROUP = 'Unit 2 - Inverses and Composition';
 const isInt = v => Number.isInteger(v);
@@ -197,7 +197,7 @@ export const invAlgebra = {
   levels: {
     1: { name: 'Easy', desc: 'Linear functions like f(x) = 3x - 7' },
     2: { name: 'Medium', desc: 'Linear functions with fractions, like f(x) = (2x - 5)/3' },
-    3: { name: 'Challenging', desc: 'Rational functions like f(x) = (3x + 4)/(2x - 5)' },
+    3: { name: 'Challenging', desc: 'Rational functions like f(x) = (3x + 4)/(2x - 5), with the domain and range of f and its inverse' },
   },
   generate(level, rng) {
     for (let t = 0; t < 300; t++) { const p = buildInvAlgebra(level, rng); if (p) return p; }
@@ -230,7 +230,7 @@ const preview = str => { try { let s = String(str).replace(/[−–]/g, '-').tri
 function buildInvAlgebra(level, rng) {
   const name = pick(rng, ['f', 'g', 'h', 'r']);
   const steps = [];
-  let fTex, truth, fwd, ansTex, bad = NaN, tag, check;
+  let fTex, truth, fwd, ansTex, bad = NaN, tag, check, extra = null;
   if (level < 3) {
     let m, b, given;
     if (level === 1) {
@@ -274,7 +274,9 @@ function buildInvAlgebra(level, rng) {
     check = invChecker(truth, bad);
   } else {
     // (a x + b)/(c x + d), ad - bc != 0, written with a positive x coefficient in the denominator
-    const a = nonzero(rng, -5, 5), b = randInt(rng, -7, 7), c = randInt(rng, 1, 3), d = randInt(rng, -6, 6);
+    const selfInv = rng() < 0.25;                              // a = -d makes f its own inverse
+    const c = randInt(rng, 1, 3), d = selfInv ? nonzero(rng, -6, 6) : randInt(rng, -6, 6), a = selfInv ? -d : nonzero(rng, -5, 5), b = randInt(rng, -7, 7);
+    extra = { a, b, c, d, selfInv: a === -d };            // a = -d can also come up by chance
     if (a * d - b * c === 0) return null;
     const num = linI(a, b), den = linI(c, d);
     fTex = `\\dfrac{${num}}{${den}}`;
@@ -291,13 +293,33 @@ function buildInvAlgebra(level, rng) {
     steps.push(`Multiply both sides by the denominator: $x\\left(${linI(c, d, 'y')}\\right) = ${linI(a, b, 'y')}$, so $${co(c)}xy${xTerm(d)} = ${linI(a, b, 'y')}$.`);
     steps.push(`Get the $y$ terms on one side and everything else on the other: $${co(c)}xy ${a < 0 ? '+' : '-'} ${Math.abs(a) === 1 ? '' : Math.abs(a)}y = ${rhsT}$.`);
     steps.push(`Factor out $y$: $y\\left(${linI(c, -a)}\\right) = ${rhsT}$, then divide: $${name}^{-1}(x) = ${ansTex}$.`);
-    tag = 'rational';
+    tag = extra.selfInv ? 'rational, its own inverse' : 'rational';
     check = invChecker(truth, bad);
+  }
+  const parts = [{ type: 'custom', label: `$${name}^{-1}(x) =$`, check, preview, keys: ['(', ')', '/'], placeholder: level === 3 ? 'e.g. (5x + 4)/(2x - 3)' : 'e.g. (x + 7)/3', answerTex: `$${ansTex}$`, help: 'Type your answer in terms of x. Fractions like (x + 7)/3 or 1/3x + 7/3 are both fine.' }];
+  let prompt = `Find the inverse of $${name}(x) = ${fTex}$.`;
+  if (extra) {
+    // domain of f excludes the zero of the denominator; range excludes the horizontal asymptote y = a/c
+    const { a, c, d, selfInv } = extra, hole = F(-d, c), ha = F(a, c);
+    prompt = `Find the inverse of $${name}(x) = ${fTex}$. Then state the domain and range of $${name}$ and of $${name}^{-1}$.`;
+    parts.push(
+      { type: 'number', label: `Domain of $${name}$: all real numbers except $x =$`, answer: hole },
+      { type: 'number', label: `Range of $${name}$: all real numbers except $y =$`, answer: ha },
+      { type: 'number', label: `Domain of $${name}^{-1}$: all real numbers except $x =$`, answer: ha },
+      { type: 'number', label: `Range of $${name}^{-1}$: all real numbers except $y =$`, answer: hole },
+    );
+    if (selfInv) {
+      const ch = shuffle(rng, [`It is the same as $${name}$: $${name}$ is its own inverse`, `It is the reciprocal of $${name}$`, `It is the opposite of $${name}$`, `It is a vertical translation of $${name}$`]);
+      parts.push({ type: 'mc', label: `What do you notice about $${name}^{-1}$?`, choices: ch, answer: ch.findIndex(t => t.startsWith('It is the same')) });
+    }
+    steps.push(`Domain of $${name}$: the denominator cannot be 0, so $x \\ne ${hole.tex()}$. Range of $${name}$: the horizontal asymptote is the ratio of the leading coefficients, $y = ${ha.tex()}$, and $${name}$ never reaches it, so $y \\ne ${ha.tex()}$.`);
+    steps.push(`An inverse swaps inputs and outputs, so the domain and range switch: $${name}^{-1}$ has domain $x \\ne ${ha.tex()}$ (its denominator is 0 at $x = ${ha.tex()}$) and range $y \\ne ${hole.tex()}$.`);
+    if (selfInv) steps.push(`Notice that $${name}^{-1}(x) = ${ansTex}$ is the same function as $${name}(x) = ${fTex}$${ansTex === fTex ? '' : ' (written differently)'}: $${name}$ is its own inverse. Its graph is symmetric about the line $y = x$.`);
   }
   return {
     tag,
-    prompt: `Find the inverse of $${name}(x) = ${fTex}$.`,
-    parts: [{ type: 'custom', label: `$${name}^{-1}(x) =$`, check, preview, keys: ['(', ')', '/'], placeholder: level === 3 ? 'e.g. (5x + 4)/(2x - 3)' : 'e.g. (x + 7)/3', answerTex: `$${ansTex}$`, help: 'Type your answer in terms of x. Fractions like (x + 7)/3 or 1/3x + 7/3 are both fine.' }],
+    prompt,
+    parts,
     solution: steps.join('<br>'),
     _check: { truth, fwd, bad, fTex },
   };

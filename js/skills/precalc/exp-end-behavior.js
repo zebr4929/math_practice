@@ -1,5 +1,5 @@
 // Skill: end behavior of exponential functions f(x) = a·b^(x-h) + k (AP Precalculus)
-import { F, randInt, pick, nonzero, readNumber } from '../../math.js?v=2.9';
+import { F, randInt, pick, nonzero, readNumber, parse, evaluate, variables } from '../../math.js?v=3.0';
 
 export const skill = {
   id: 'exp-end-behavior',
@@ -10,10 +10,16 @@ export const skill = {
   blurb: 'Complete the limits as x goes to negative and positive infinity.',
   levels: {
     1: { name: 'Easy', desc: 'Read the end behavior from a graph' },
-    2: { name: 'Medium', desc: 'From the equation, no reflections' },
-    3: { name: 'Challenging', desc: 'From the equation, reflected over the asymptote' },
+    2: { name: 'Medium', desc: 'From the equation, no reflections, plus the four cases of a and b' },
+    3: { name: 'Challenging', desc: 'Reflected over the asymptote, and writing a function with given behavior' },
   },
-  generate(level, rng) { return build(level, rng); },
+  generate(level, rng) {
+    const u = rng();
+    if (level === 2 && u < 0.35) return cases(rng);
+    if (level === 3 && u < 0.3) return writeOne(rng);
+    if (level === 3 && u < 0.5) return cases(rng);
+    return build(level, rng);
+  },
 };
 
 const BASES = [F(2), F(3), F(4), F(5), F(1, 2), F(1, 3), F(1, 4), F(2, 3), F(3, 2)];
@@ -89,8 +95,61 @@ function build(level, rng) {
     tag: level === 1 ? 'from a graph' : level === 2 ? 'from equation' : 'reflected, from equation',
     prompt: level === 1 ? 'The graph of $f$ is shown. Complete each limit.' : `Let $${fTex}$. Complete each limit.`,
     displayGraph,
-    parts: [mk(left, -1), mk(right, 1)],
-    solution,
+    parts: level === 1 ? [mk(left, -1), mk(right, 1)] : [mk(left, -1), mk(right, 1), { type: 'mc', label: `The graph of $f$ is:`, choices: [`Above its asymptote $y = ${k}$`, `Below its asymptote $y = ${k}$`], answer: sgn > 0 ? 0 : 1 }],
+    solution: level === 1 ? solution : solution + `<br>The term $${aT}${b.isInt() && !a.eq(1) && !a.eq(-1) ? `\\left(${b.n}\\right)` : bTex}^{${expo}}$ is ${sgn > 0 ? 'always positive' : 'always negative'}, so $f(x)$ is always ${sgn > 0 ? 'greater' : 'less'} than ${k}: the graph is ${sgn > 0 ? 'above' : 'below'} the asymptote.`,
     _check: { a: a.value(), b: b.value(), h, k, left, right, fn },
+  };
+}
+
+// ---------- the four cases of f(x) = k + ab^x (a > 0 or a < 0, b > 1 or 0 < b < 1) ----------
+function cases(rng) {
+  const aPos = rng() < 0.5, bBig = rng() < 0.5;
+  const inc = aPos === bBig;
+  const choices1 = ['Increasing', 'Decreasing'], choices2 = ['Above $y = k$', 'Below $y = k$'];
+  const choices3 = ['$\\displaystyle\\lim_{x \\to \\infty} f(x) = k$', '$\\displaystyle\\lim_{x \\to -\\infty} f(x) = k$'];
+  return {
+    tag: 'four cases',
+    prompt: `Let $f(x) = k + ab^x$ with $${aPos ? 'a > 0' : 'a < 0'}$ and $${bBig ? 'b > 1' : '0 < b < 1'}$. Describe the graph of $f$.`,
+    parts: [
+      { type: 'mc', label: '$f$ is:', choices: choices1, answer: inc ? 0 : 1 },
+      { type: 'mc', label: 'The graph is:', choices: choices2, answer: aPos ? 0 : 1 },
+      { type: 'mc', label: 'Which limit equals $k$?', choices: choices3, answer: bBig ? 1 : 0 },
+    ],
+    solution: `$b^x$ ${bBig ? 'grows' : 'shrinks'} as $x$ increases (${bBig ? '$b > 1$' : '$0 < b < 1$'}), so it shrinks to 0 as $x \\to ${bBig ? '-\\infty' : '\\infty'}$. That is the side where $f(x)$ approaches $k$: $\\displaystyle\\lim_{x \\to ${bBig ? '-\\infty' : '\\infty'}} f(x) = k$.<br>`
+      + `${aPos ? '$a > 0$ keeps $ab^x$ positive' : '$a < 0$ makes $ab^x$ negative'}, so $f(x)$ is always ${aPos ? 'greater' : 'less'} than $k$: the graph is ${aPos ? 'above' : 'below'} $y = k$.<br>`
+      + `$b^x$ is ${bBig ? 'increasing' : 'decreasing'}${aPos ? '' : ', and the negative $a$ flips that'}: $f$ is ${inc ? 'increasing' : 'decreasing'}.`,
+    _check: { aPos, bBig, inc },
+  };
+}
+
+// ---------- write k + ab^x with a given asymptote, direction and end behavior ----------
+function writeOne(rng) {
+  const K = nonzero(rng, -8, 8), inc = rng() < 0.5, right = rng() < 0.5;   // right: approaches K as x -> infinity
+  // approaches K on the right needs 0 < b < 1; then increasing needs a < 0
+  const aPos = right ? !inc : inc;
+  const ex = `${K} ${aPos ? '+' : '-'} 2(${right ? '0.5' : '2'})^x`;
+  const check = str => {
+    const s0 = String(str).replace(/[−–]/g, '-').replace(/^\s*f\s*\(\s*x\s*\)\s*=\s*/i, '').trim();
+    if (!s0) return { ok: false, msg: 'Enter a function of x.', format: true };
+    let tree; try { tree = parse(s0); } catch { return { ok: false, msg: 'Could not read that. Example: -3 + 2(0.5)^x', format: true }; }
+    for (const v of variables(tree)) if (v !== 'x') return { ok: false, msg: 'Use x as the variable.', format: true };
+    const f = x => evaluate(tree, { x });
+    const y = [0, 1, 2, 3, 4].map(f);
+    if (y.some(v => !isFinite(v))) return { ok: false };
+    const d = [0, 1, 2, 3].map(i => y[i + 1] - y[i]);
+    if (d.some(v => Math.abs(v) < 1e-12)) return { ok: false, msg: 'That function is constant somewhere. It needs to be an exponential, k + ab^x.' };
+    const b = d[1] / d[0];
+    if (!(b > 0) || Math.abs(b - 1) < 1e-9 || [2, 3].some(i => Math.abs(d[i] / d[i - 1] - b) > 1e-7 * Math.max(1, b))) return { ok: false, msg: 'Write it in the form k + ab^x.' };
+    const a = d[0] / (b - 1), k = y[0] - a;
+    const okK = Math.abs(k - K) < 1e-7, okInc = (d[0] > 0) === inc, okEnd = (b < 1) === right;
+    return { ok: okK && okInc && okEnd };
+  };
+  return {
+    tag: 'write a function',
+    prompt: `Write a function of the form $f(x) = k + ab^x$ that is ${inc ? 'increasing' : 'decreasing'}, has a horizontal asymptote at $y = ${K}$, and approaches ${K} as $x \\to ${right ? '\\infty' : '-\\infty'}$.`,
+    parts: [{ type: 'custom', label: '$f(x) =$', check, keys: ['^', '(', ')', '/', '-'], placeholder: 'e.g. -3 + 2(0.5)^x', answerTex: `Answers vary, for example $${ex.replace('(0.5)', '(0.5)').replace('^x', '^x')}$`, help: 'Type the right side, like -3 + 2(0.5)^x.' }],
+    solution: `The asymptote is $y = ${K}$, so $k = ${K}$.<br>To approach ${K} as $x \\to ${right ? '\\infty' : '-\\infty'}$, the power $b^x$ must shrink to 0 on that side, so $${right ? '0 < b < 1' : 'b > 1'}$.<br>`
+      + `$b^x$ is then ${right ? 'decreasing' : 'increasing'}. For $f$ to be ${inc ? 'increasing' : 'decreasing'}, ${aPos ? 'keep $a > 0$' : 'flip it with $a < 0$'}.<br>One answer: $f(x) = ${ex}$. Any $k = ${K}$, $${right ? '0 < b < 1' : 'b > 1'}$ and $${aPos ? 'a > 0' : 'a < 0'}$ works.`,
+    _check: { K, inc, right, aPos, ex, check },
   };
 }
