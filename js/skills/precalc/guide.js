@@ -5,10 +5,10 @@
 //  4. Change of Base (2.12)
 //  5. Log Equations and Inequalities (2.13): quadratic inequalities and log domains
 //  6. Exponential Models from Data (2.13): build the model, then solve for the input
-import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=3.3';
-import { parseL, evalL, varsL, logsIn, stripL, previewL, readValue, matches, valueChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=3.3';
-import { logHead } from './logs2.js?v=3.3';
-import { solveSet, setTex, asNums, testOp, opT } from './logs3.js?v=3.3';
+import { F, randInt, pick, nonzero, shuffle, gcd } from '../../math.js?v=3.4';
+import { parseL, evalL, varsL, logsIn, stripL, previewL, readValue, matches, valueChecker, intervalChecker, LOG_KEYS } from './logexpr.js?v=3.4';
+import { logHead } from './logs2.js?v=3.4';
+import { solveSet, setTex, asNums, testOp, opT } from './logs3.js?v=3.4';
 
 const SEQ = 'Unit 2 - Sequences and Exponentials';
 const LOGS = 'Unit 2 - Logarithms';

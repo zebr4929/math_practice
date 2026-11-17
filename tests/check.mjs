@@ -916,7 +916,7 @@ function typedFrac(v) { const f = [1, 2, 3, 4].map(d => [Math.round(v * d), d]).
     { const p = X.expReadAccel.generate(L, R(6), ctx), c = p._check, f = x => c.a * Math.pow(c.b, c.s * x) + c.c;
       const lim = x => { const y = f(x); return Math.abs(y - c.c) < 1e-6 ? c.c : y > 1e6 ? Infinity : y < -1e6 ? -Infinity : NaN; };
       if (lim(-80) !== c.left || lim(80) !== c.right) B('read limits', p);
-      const grows = Math.abs(f(3) - c.c) > Math.abs(f(2) - c.c); if (grows !== c.growth || p.parts[0].answer !== (grows ? 0 : 1)) B('read growth', p);
+      const grows = f(3) > f(2); if (grows !== c.growth || p.parts[0].answer !== (grows ? 0 : 1)) B('read growth', p);
       if (p.parts[3].answer.value() !== c.c || p.parts[4].answer !== (c.a > 0 ? 0 : 1) || p.parts[5].answer !== (c.b > 1 ? 0 : 1)) B('read a b c', p);
       if (!p.parts[1].check(c.left === Infinity ? 'inf' : c.left === -Infinity ? '-∞' : String(c.left)).ok || p.parts[1].check(c.left === Infinity ? '-inf' : 'inf').ok) B('read end check', p);
       if (L === 2) { const cells = [...p.visual.matchAll(/<th>(-?\d+)<\/th>/g)].map(m => +m[1]), vals = [...p.visual.matchAll(/<td>\$(-?[\d.]+)\$<\/td>/g)].map(m => +m[1]);
@@ -934,7 +934,7 @@ function typedFrac(v) { const f = [1, 2, 3, 4].map(d => [Math.round(v * d), d]).
         if (!ck(typed(p.parts[0].answerTex.slice(1, -1))).ok || ck(given).ok) B('e law check', p); }
       else { const given = typed(p.prompt.split('$')[3]).replace(/^y = /, ''); const tr = parseL(given);
         for (const x of [0.3, 1.1, -0.8]) if (!near(evalL(tr, { [c.v]: x }), c.a * Math.pow(c.b, x), 1e-8)) { B('rewrite value ' + given, p); break; }
-        if (p.parts[2].answer !== (c.b > 1 ? 0 : 1)) B('rewrite growth', p);
+        if (p.parts[2].answer !== (c.a * Math.pow(c.b, 1.3) > c.a * Math.pow(c.b, 1.2) ? 0 : 1)) B('rewrite growth', p);
         for (const k of [0, 1]) { const t = p.parts[k].answerTex.split('$')[1]; if (!p.parts[k].check(typed(t)).ok) B('rewrite own ' + t, p); }
         if (!p.parts[1].check(c.b.toFixed(3)).ok) B('rewrite decimal b', p); } }
     // 9. two points

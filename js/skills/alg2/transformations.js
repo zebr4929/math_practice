@@ -1,6 +1,6 @@
 // Accelerated Algebra II, Unit T: transformations of functions.
 // Every transformation here is g(x) = A·f(B(x − h)) + k. A point (x, y) on f moves to (x/B + h, A·y + k).
-import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=3.3';
+import { F, Frac, randInt, pick, nonzero, parse, evaluate, toTex, shuffle } from '../../math.js?v=3.4';
 
 const GROUP = 'Unit T - Transformations';
 const COURSE = ['accel'];

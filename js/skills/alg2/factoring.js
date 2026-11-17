@@ -1,5 +1,5 @@
 // Skill: Factoring quadratics (Algebra II)
-import { randInt, pick, nonzero, parse, evaluate, toTex, gcd } from '../../math.js?v=3.3';
+import { randInt, pick, nonzero, parse, evaluate, toTex, gcd } from '../../math.js?v=3.4';
 
 export const skill = {
   id: 'factoring',

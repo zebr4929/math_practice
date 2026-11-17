@@ -1,6 +1,6 @@
 // Accelerated Algebra II, Unit 3 (lessons 3.1 to 3.4): rational exponents and exponential functions.
-import { F, Frac, randInt, pick, nonzero, shuffle, gcd, parse, evaluate, variables } from '../../math.js?v=3.3';
-import { parseL, evalL, previewL, valueChecker, intervalChecker, readValue, matches } from '../precalc/logexpr.js?v=3.3';
+import { F, Frac, randInt, pick, nonzero, shuffle, gcd, parse, evaluate, variables } from '../../math.js?v=3.4';
+import { parseL, evalL, previewL, valueChecker, intervalChecker, readValue, matches } from '../precalc/logexpr.js?v=3.4';
 
 const COURSE = ['accel'];
 const G_RAT = 'Unit 3 - Rational Exponents';
@@ -545,8 +545,9 @@ function buildRead(level, rng) {
   const b = level === 2 ? pick(rng, [F(2), F(1, 2)]) : pick(rng, [F(2), F(3), F(1, 2), F(1, 3)]);
   const c = randInt(rng, -4, 4);
   const f = x => a.value() * Math.pow(b.value(), s * x) + c;
-  const eff = s > 0 ? b.value() : 1 / b.value(), growth = eff > 1;
-  const left = growth ? c : (a.sign() > 0 ? Infinity : -Infinity), right = growth ? (a.sign() > 0 ? Infinity : -Infinity) : c;
+  // away: the graph pulls away from its asymptote as x increases. Growth (the class's rule): the graph rises from left to right.
+  const eff = s > 0 ? b.value() : 1 / b.value(), away = eff > 1, growth = (a.sign() > 0) === away;
+  const left = away ? c : (a.sign() > 0 ? Infinity : -Infinity), right = away ? (a.sign() > 0 ? Infinity : -Infinity) : c;
   const name = pick(rng, ['f', 'g', 'h', 'H']);
   const form = `a\\cdot b^{${s > 0 ? 'x' : '-x'}} + c`;
   let visual = '', displayGraph;
@@ -571,20 +572,20 @@ function buildRead(level, rng) {
     { type: 'mc', label: 'The value of $b$:', choices: ['$b > 1$', '$0 < b < 1$'], answer: b.value() > 1 ? 0 : 1 },
   ];
   if (level === 2) parts.push({ type: 'custom', label: 'Range:', check: intervalChecker(a.sign() > 0 ? [{ lo: c, hi: Infinity, lc: false, rc: false }] : [{ lo: -Infinity, hi: c, lc: false, rc: false }], 'y'), keys: ['<', '>', '∞', '(', ')'], placeholder: 'e.g. y > 1', answerTex: `$y ${a.sign() > 0 ? '>' : '<'} ${c}$` });
-  const flat = growth ? 'left' : 'right';
+  const flat = away ? 'left' : 'right';
   const steps = [
     `The graph levels off toward $y = ${c}$ on the ${flat}, so the horizontal asymptote is $y = ${c}$ and $c = ${c}$.`,
-    `Moving left to right, the graph ${growth ? 'pulls away from' : 'closes in on'} the asymptote, so it is exponential ${growth ? 'growth' : 'decay'}. Left end: $${name}(x) \\to ${endTex(left)}$; right end: $${name}(x) \\to ${endTex(right)}$.`,
+    `Moving left to right, the graph ${growth ? 'rises' : 'falls'}, so it is exponential ${growth ? 'growth' : 'decay'}. Left end: $${name}(x) \\to ${endTex(left)}$; right end: $${name}(x) \\to ${endTex(right)}$.`,
     `The graph is ${a.sign() > 0 ? 'above' : 'below'} its asymptote, so $a ${a.sign() > 0 ? '> 0' : '< 0'}$.`,
-    s > 0 ? `For $b^x$: ${growth ? 'growth' : 'decay'} means $${growth ? 'b > 1' : '0 < b < 1'}$.`
-      : `For $b^{-x}$ the negative exponent reverses things: $b^{-x} = \\left(\\tfrac{1}{b}\\right)^x$. ${growth ? 'Growth' : 'Decay'} means $\\tfrac{1}{b} ${growth ? '> 1' : '< 1'}$, so $${b.value() > 1 ? 'b > 1' : '0 < b < 1'}$.`,
+    `As $x$ increases, the graph ${away ? 'pulls away from' : 'closes in on'} its asymptote, so the power $${s > 0 ? 'b^x' : 'b^{-x}'}$ is getting ${away ? 'larger' : 'smaller'}${a.sign() < 0 ? ' (the negative $a$ flips the graph, but not this)' : ''}. `
+      + (s > 0 ? `That means $${away ? 'b > 1' : '0 < b < 1'}$.` : `$b^{-x} = \\left(\\tfrac{1}{b}\\right)^x$, so $\\tfrac{1}{b} ${away ? '> 1' : '< 1'}$, which means $${b.value() > 1 ? 'b > 1' : '0 < b < 1'}$.`),
   ];
   if (level === 2) steps.push(`Range: the graph is ${a.sign() > 0 ? 'above' : 'below'} $y = ${c}$ and never reaches it, so $y ${a.sign() > 0 ? '>' : '<'} ${c}$.`);
   return {
     tag: `${level === 2 ? 'table' : 'graph'}, ${s > 0 ? 'b^x' : 'b^-x'}, ${growth ? 'growth' : 'decay'}`,
     prompt: `${level === 2 ? 'A table of values is shown' : 'The graph is shown'} for an exponential function of the form $${name}(x) = ${form}$. Answer each question.`,
     visual, displayGraph, parts, solution: steps.join('<br>'),
-    _check: { a: a.value(), b: b.value(), c, s, growth, left, right },
+    _check: { a: a.value(), b: b.value(), c, s, growth, away, left, right },
   };
 }
 
@@ -725,8 +726,10 @@ function buildRewrite(level, rng) {
     a = c.value(); aTex = c.tex(); b = bb.value(); bTexS = bb.tex();
     why.push(`Power to a power: $${bTex(B)}^{${kx}} = \\left(${bTex(B)}^{${K.tex()}}\\right)^{${v}}$, and $${bTex(B)}^{${K.tex()}} = ${bb.tex()}$.`, `So $a = ${c.tex()}$ and $b = ${bb.tex()}$.`);
   }
-  const growth = b > 1;
-  why.push(`$b ${growth ? '> 1' : '< 1'}$, so this is exponential ${growth ? 'growth' : 'decay'} with ${growth ? 'growth' : 'decay'} factor $${bTexS}$.`);
+  // growth: the graph rises from left to right, so a negative a flips it
+  const growth = (a > 0) === (b > 1);
+  why.push(a > 0 ? `$a > 0$ and $b ${b > 1 ? '> 1' : '< 1'}$, so the graph ${growth ? 'rises' : 'falls'} from left to right: exponential ${growth ? 'growth' : 'decay'}.`
+    : `$b ${b > 1 ? '> 1' : '< 1'}$, but $a < 0$ reflects the graph over the x-axis, so it ${growth ? 'rises' : 'falls'} from left to right: exponential ${growth ? 'growth' : 'decay'}.`);
   const vp = (label, val, tex) => ({ type: 'custom', label, check: valueChecker(val), preview: previewL, keys: ['e^', '/', '(', ')', '^'], placeholder: 'e.g. 1/8 or 3e^2', answerTex: `$${tex}$${Number.isInteger(val) || /^-?\d+$|frac|^-?\d+\/\d+$/.test(tex) && !/e/.test(tex) ? '' : ` $\\approx ${d3(val)}$`}`, help: 'Exact answers like 3e^2 or 1/8 are best; decimals rounded to 3 places also count.' });
   return {
     tag: level === 1 ? 'e^(kt)' : level === 2 ? (bTexS === 'e' ? 'e with a shift' : 'shift') : (bTexS.startsWith('e') ? 'e with a coefficient on x' : 'coefficient on x'),

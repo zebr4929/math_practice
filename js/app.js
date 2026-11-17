@@ -1,7 +1,7 @@
-import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.3';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.3';
-import { CONFIG } from './config.js?v=3.3';
-import { makeGrid, makeLogGrid } from './graph.js?v=3.3';
+import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.4';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.4';
+import { CONFIG } from './config.js?v=3.4';
+import { makeGrid, makeLogGrid } from './graph.js?v=3.4';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
