@@ -1,7 +1,7 @@
-import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.2';
-import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.2';
-import { CONFIG } from './config.js?v=3.2';
-import { makeGrid, makeLogGrid } from './graph.js?v=3.2';
+import { SKILLS, byId, EXAMS } from './skills/index.js?v=3.3';
+import { makeRng, checkNumber, checkList, checkPoint, checkRule, previewTex, Frac } from './math.js?v=3.3';
+import { CONFIG } from './config.js?v=3.3';
+import { makeGrid, makeLogGrid } from './graph.js?v=3.3';
 
 const app = document.getElementById('app');
 const who = document.getElementById('who');
@@ -141,8 +141,9 @@ function home() {
   // collapsible sections: open the teacher's current section(s) by default, then remember each student's choices
   // sections in lesson order
   const firstLesson = g => list.filter(s => groupOf(s) === g).map(lessonKey).sort((x, y) => (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)))[0];
-  groups = groups.sort((a, b) => { const x = firstLesson(a), y = firstLesson(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); });
-  const openKey = 'pp.open.' + course.skills;
+  const unitRank = g => { if (!course.unitOrder) return 0; const u = (g.match(/^Unit\s+(\S+)/) || [])[1]; const i = course.unitOrder.indexOf(u); return i < 0 ? course.unitOrder.length : i; };
+  groups = groups.sort((a, b) => { const x = firstLesson(a), y = firstLesson(b); return (unitRank(a) - unitRank(b)) || (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); });
+  const openKey = 'pp.open.' + course.skills + (course.openVersion ? '.v' + course.openVersion : '');
   const open = new Set(store.get(openKey, course.openSections || []));
   const exams = myExams();
   app.innerHTML = intro + groups.map(g => {

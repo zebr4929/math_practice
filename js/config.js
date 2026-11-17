@@ -10,7 +10,10 @@ export const CONFIG = {
     // collapsible: show skills in sections that open and close. openSections: the sections that
     // start open for a student who has not opened or closed any yet (update as the year goes on).
     { name: 'AP Precalculus', skills: 'precalc', collapsible: true, openSections: ['Unit 2 - Logarithms', 'Unit 2 - Log Equations and Semi-Log Plots'] },
-    { name: 'Accelerated Algebra II', skills: 'accel', collapsible: true, openSections: ['Unit 2 - Quadratic Functions and Graphs', 'Unit 2 - Applications and Circles', 'Unit T - Transformations'] },
+    // unitOrder: the order of units on the home page (Unit T came between Units 2 and 3).
+    // openVersion: bump it when openSections change, so every student's page starts from the new default.
+    { name: 'Accelerated Algebra II', skills: 'accel', collapsible: true, unitOrder: ['1', '2', 'T', '3', '4', '5', '6', '7', '8'], openVersion: 2,
+      openSections: ['Unit T - Transformations', 'Unit 3 - Rational Exponents', 'Unit 3 - Exponential Functions'] },
     { name: 'Honors Algebra II', skills: 'honors' },
   ],
 
@@ -20,5 +23,5 @@ export const CONFIG = {
   blocks: ['A', 'B', 'C', 'D', 'E', 'F'],
 
   problemsPerSet: 6,
-  version: '3.2',
+  version: '3.3',
 };

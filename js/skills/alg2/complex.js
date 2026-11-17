@@ -2,8 +2,8 @@
 //  1. Square roots of negative numbers
 //  2. Powers of i
 //  3. Adding, subtracting, multiplying and dividing complex numbers
-import { F, randInt, pick, nonzero, gcd } from '../../math.js?v=3.2';
-import { splitSquare, complexChecker, complexPreview } from './solveutil.js?v=3.2';
+import { F, randInt, pick, nonzero, gcd } from '../../math.js?v=3.3';
+import { splitSquare, complexChecker, complexPreview } from './solveutil.js?v=3.3';
 
 const GROUP = 'Unit 2 - Complex Numbers';
 const KEYS = ['i', '√', '(', ')', '/'];

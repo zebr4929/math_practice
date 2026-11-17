@@ -854,4 +854,96 @@ function typedFrac(v) { const f = [1, 2, 3, 4].map(d => [Math.round(v * d), d]).
   }
   console.log('mock exam check: bad =', bad); errors += bad;
 }
+
+// ---------- Accelerated Algebra II, Unit 3 (exponentials.js): checked from the problem as displayed ----------
+{
+  let bad = 0; const B = (m, p) => { if (bad++ < 15) console.log('UNIT3 FAIL', m, JSON.stringify(p?.prompt)?.slice(0, 200)); };
+  const X = await import('../js/skills/alg2/exponentials.js' + v);
+  const { parse: mp, evaluate: me } = await import('../js/math.js' + v);
+  const { parseL, evalL } = await import('../js/skills/precalc/logexpr.js' + v);
+  // displayed TeX -> something the parsers read
+  const typed = tex => { let t = tex.replace(/\\left\(/g, '(').replace(/\\right\)/g, ')').replace(/\\cdot/g, '*').replace(/\\[,;]/g, ' '), prev;
+    do { prev = t; t = t.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))').replace(/\\sqrt\[(\d+)\]\{([^{}]*)\}/g, '(($2)^(1/$1))').replace(/\\sqrt\{([^{}]*)\}/g, '(($1)^(1/2))').replace(/\^\{([^{}]*)\}/g, '^($1)'); } while (t !== prev);
+    return t.replace(/[{}]/g, '').trim(); };
+  const near = (a, b, tol = 1e-9) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(b));
+  const fnOf = p => { const ms = [...p.prompt.matchAll(/\$([a-zA-Z]+)\(x\) = ([^$]+)\$/g)], nf = ms.filter(m => m[1] !== 'f' || ms.length === 1), t = nf[nf.length - 1]; return t ? (x => me(mp(typed(t[2])), { x })) : null; };
+  const realRoot = (x, n) => (x < 0 ? (n % 2 ? -Math.pow(-x, 1 / n) : NaN) : Math.pow(x, 1 / n));
+  for (const L of [1, 2, 3]) for (let seed = 1; seed <= 1200; seed++) {
+    const R = salt => makeRng((seed * 2654435761 + L * 131 + salt * 17) >>> 0), ctx = { course: 'accel' };
+    // 1. laws of exponents
+    { const p = X.expLaws.generate(L, R(1), ctx), M = p._check.R, given = typed(p._check.given), vs = Object.keys(M.e);
+      for (const pt of [[1.3, 0.7], [-0.8, 1.9], [2.2, -1.1]]) { const env = { [vs[0]]: pt[0], [vs[1]]: pt[1] }; const want = M.c.value() * vs.reduce((s, w) => s * Math.pow(env[w], M.e[w].value()), 1); if (!near(me(mp(given), env), want, 1e-8)) { B('laws value ' + given, p); break; } }
+      const ck = p.parts[0].check; const own = typed(p.parts[0].answerTex.slice(1, -1));
+      if (!ck(own).ok) B('laws own ' + own, p);
+      const r = ck(given); if (r.ok || !r.msg) B('laws given accepted ' + given, p);
+      if (vs.some(w => M.e[w].sign() < 0)) { const raw = `${M.c.n}/${M.c.d}*` + vs.map(w => `${w}^(${M.e[w].n})`).join('*'); const r2 = ck(raw); if (r2.ok || !r2.msg) B('laws negative exponents accepted ' + raw, p); } }
+    // 2. evaluating rational exponents (odd roots of negatives handled by hand, since Math.pow returns NaN)
+    { const p = X.ratExpEval.generate(L, R(2), ctx), g = p._check.givenTex;
+      const m = g.match(/^(-)?(?:\(-(\d+)\)|\\left\(\\dfrac\{(\d+)\}\{(\d+)\}\\right\)|(\d+))\^\{(-)?\\frac\{(\d+)\}\{(\d+)\}\}$/);
+      if (!m) B('rat parse ' + g, p); else {
+        const base = m[2] ? -m[2] : m[3] ? m[3] / m[4] : +m[5], mm = +m[7], nn = +m[8];
+        let val = Math.pow(realRoot(base, nn), mm); if (m[6]) val = 1 / val; if (m[1]) val = -val;
+        const want = p._check.ans;
+        if (want === null ? !Number.isNaN(val) : !near(val, want)) B(`rat value ${g} ${val} vs ${want}`, p);
+        const ck = p.parts[0].check;
+        if (want === null) { if (!ck('not real').ok || ck('4').ok) B('rat not real', p); }
+        else { if (!ck(typed(p.parts[0].answerTex.slice(1, -1))).ok || ck('not real').ok || ck(String(want + 1)).ok) B('rat answer', p); } } }
+    // 3. radicals and rational exponents
+    { const p = X.radicalExp.generate(L, R(3), ctx);
+      if (p.parts[0].type === 'mc') { const c = p._check, right = c.choiceVals.filter(v2 => near(v2, c.truthAt2)); if (right.length !== 1 || !near(c.choiceVals[p.parts[0].answer], c.truthAt2)) B('radical mc', p); }
+      else { const M = p._check.R, w = Object.keys(M.e)[0], given = typed(p.prompt.split('$')[1].replace(/^\;/, '').trim());
+        for (const xv of [0.6, 1.7, 3.1]) if (!near(me(mp(given), { [w]: xv }), M.c.value() * Math.pow(xv, M.e[w].value()), 1e-8)) { B('radical value ' + given, p); break; }
+        if (!p.parts[0].check(typed(p.parts[0].answerTex.slice(1, -1))).ok) B('radical own', p);
+        if (p.parts[0].check(`${w}^(${M.e[w].value().toFixed(4)})`).ok) B('radical decimal exponent accepted', p); } }
+    // 4, 5, 10. transformations, graphing, domain and range: everything from the displayed g(x)
+    for (const sk of [X.expTransformAccel, X.expGraphAccel, X.expDomainAccel]) {
+      const p = sk.generate(L, R(4 + sk.id.length), ctx), T = p._check.T, g = fnOf(p);
+      if (!g) { B('transform no g', p); continue; }
+      const vals = []; for (let x = -60; x <= 60; x += 0.37) { const y = g(x); if (isFinite(y)) vals.push(y); }
+      const above = T.A > 0;
+      if (!vals.every(y => (above ? y > T.k - 1e-9 : y < T.k + 1e-9)) || !vals.some(y => Math.abs(y - T.k) > 0.5)) B('range side', p);
+      if (!near(Math.min(...vals.map(y => Math.abs(y - T.k))), 0, 0.05)) B('asymptote not approached', p);
+      const rp = p.parts.find(q => q.label === 'Range:');
+      if (!rp.check(above ? `y > ${T.k}` : `y < ${T.k}`).ok || rp.check(above ? `y < ${T.k}` : `y > ${T.k}`).ok || !rp.check(above ? `(${T.k}, inf)` : `(-inf, ${T.k})`).ok) B('range check', p);
+      if (sk === X.expTransformAccel) { const ptp = p.parts[1], [nx, ny] = ptp.answer.map(f => f.value()); if (!near(g(nx), ny)) B('point not on g', p);
+        const [x0, y0] = p._check.pt; if (!near(Math.pow(T.b, x0), y0)) B('point not on f', p);
+        if (p.parts[2].answer.value() !== T.k) B('asymptote', p); }
+      if (sk === X.expGraphAccel) { const gp = p.parts[0]; for (const q of gp.correct) if (!near(g(q.x), q.y) || q.x < gp.window.xmin || q.x > gp.window.xmax || q.y < gp.window.ymin || q.y > gp.window.ymax) B('graph point', p);
+        if (!gp.check(gp.correct).ok || gp.check(gp.correct.map(q => ({ x: q.x + 1, y: q.y }))).ok) B('graph check', p); }
+      if (sk === X.expDomainAccel) { const dp = p.parts[0]; if (!dp.check('all real numbers').ok || !dp.check('(-inf, inf)').ok || dp.check(`x > ${T.k}`).ok) B('domain check', p); }
+    }
+    // 6. reading graphs and tables
+    { const p = X.expReadAccel.generate(L, R(6), ctx), c = p._check, f = x => c.a * Math.pow(c.b, c.s * x) + c.c;
+      const lim = x => { const y = f(x); return Math.abs(y - c.c) < 1e-6 ? c.c : y > 1e6 ? Infinity : y < -1e6 ? -Infinity : NaN; };
+      if (lim(-80) !== c.left || lim(80) !== c.right) B('read limits', p);
+      const grows = Math.abs(f(3) - c.c) > Math.abs(f(2) - c.c); if (grows !== c.growth || p.parts[0].answer !== (grows ? 0 : 1)) B('read growth', p);
+      if (p.parts[3].answer.value() !== c.c || p.parts[4].answer !== (c.a > 0 ? 0 : 1) || p.parts[5].answer !== (c.b > 1 ? 0 : 1)) B('read a b c', p);
+      if (!p.parts[1].check(c.left === Infinity ? 'inf' : c.left === -Infinity ? '-∞' : String(c.left)).ok || p.parts[1].check(c.left === Infinity ? '-inf' : 'inf').ok) B('read end check', p);
+      if (L === 2) { const cells = [...p.visual.matchAll(/<th>(-?\d+)<\/th>/g)].map(m => +m[1]), vals = [...p.visual.matchAll(/<td>\$(-?[\d.]+)\$<\/td>/g)].map(m => +m[1]);
+        cells.forEach((x, i) => { if (Math.abs(f(x) - vals[i]) > 0.0006) B('read table value', p); }); } }
+    // 7. writing equations from a graph
+    { const p = X.expWriteAccel.generate(L, R(7), ctx), c = p._check;
+      for (const [x, y] of c.pts) if (!near(c.a * Math.pow(c.b, x + c.p) + c.c, y)) B('write point', p);
+      if (p.parts[0].answer.value() !== c.c || p.parts[1].answer.value() !== c.a || !near(p.parts[2].answer.value(), c.b)) B('write answers', p);
+      if (p.displayGraph) for (const l of p.displayGraph.labels) if (!near(p.displayGraph.fn(l.x), l.y)) B('write label', p);
+      const shown = [...p.prompt.matchAll(/\((-?\d+), (-?\d+)\)/g)].map(m => [+m[1], +m[2]]); for (const [x, y] of shown) if (!near(c.a * Math.pow(c.b, x + c.p) + c.c, y)) B('write shown point', p); }
+    // 8. rewriting in y = ab^x
+    { const p = X.expRewriteAccel.generate(L, R(8), ctx), c = p._check;
+      if (p.tag.startsWith('e law')) { const given = typed(p.prompt.split('$')[3]); const tr = parseL(given), ck = p.parts[0].check;
+        for (const x of [0.3, 1.1]) if (!near(evalL(tr, { [c.v]: x }), c.truth(x), 1e-8)) B('e law given', p);
+        if (!ck(typed(p.parts[0].answerTex.slice(1, -1))).ok || ck(given).ok) B('e law check', p); }
+      else { const given = typed(p.prompt.split('$')[3]).replace(/^y = /, ''); const tr = parseL(given);
+        for (const x of [0.3, 1.1, -0.8]) if (!near(evalL(tr, { [c.v]: x }), c.a * Math.pow(c.b, x), 1e-8)) { B('rewrite value ' + given, p); break; }
+        if (p.parts[2].answer !== (c.b > 1 ? 0 : 1)) B('rewrite growth', p);
+        for (const k of [0, 1]) { const t = p.parts[k].answerTex.split('$')[1]; if (!p.parts[k].check(typed(t)).ok) B('rewrite own ' + t, p); }
+        if (!p.parts[1].check(c.b.toFixed(3)).ok) B('rewrite decimal b', p); } }
+    // 9. two points
+    { const p = X.expTwoPointsAccel.generate(L, R(9), ctx), c = p._check;
+      const shown = [...p.prompt.matchAll(/\((-?\d+), (-?[\d.]+)\)/g)].map(m => [+m[1], +m[2]]).concat((p.displayGraph?.labels || []).map(l => [l.x, l.y]));
+      if (shown.length < 2) B('two points shown', p);
+      for (const [x, y] of shown) if (!near(c.a * Math.pow(c.b, x), y, 1e-9)) B('two points value', p);
+      if (p.parts[0].answer.value() !== c.a || !near(p.parts[1].answer.value(), c.b)) B('two points answers', p); }
+  }
+  console.log('accel unit 3 check: bad =', bad); errors += bad;
+}
 console.log('total errors', errors);

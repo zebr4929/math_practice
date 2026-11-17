@@ -78,6 +78,16 @@ Setup instructions are in [SETUP.md](SETUP.md).
 | Accelerated | T Where Does the Point Go? | Translations | One dilation or reflection | Combinations, vertex after a shift |
 | Accelerated | T Writing Equations from Transformations | Shifts only | One stretch or reflection | Combinations |
 | Accelerated | T Domain and Range After Transformations | Single shift | Two shifts | Dilations and reflections |
+| Accelerated | 3.1 Laws of Exponents (positive exponents only) | Products and powers | Quotients with negative exponents | Negative powers of a factor or a fraction |
+| Accelerated | 3.1 Evaluating Rational Exponents | Unit fractions, sign traps | Exponents like 2/3, 3/2 | Negative exponents, fraction bases, not real |
+| Accelerated | 3.1 Radicals and Rational Exponents | Radical to exponent | With a coefficient | Exponent to radical (choice); (27x⁶)^(2/3) |
+| Accelerated | 3.2 Transformations of Exponential Functions | Shifts of 2ˣ | x-axis reflection, (½)ˣ parent | y-axis reflection |
+| Accelerated | 3.2 Graphing Transformed Exponentials (click 3 points) | Shifts of 2ˣ | x-axis reflection, (½)ˣ parent | y-axis reflection |
+| Accelerated | 3.2 Domain and Range of Exponential Functions | Shifts | x-axis reflection, fraction bases | Most or all transformations |
+| Accelerated | 3.3 Reading Exponential Graphs and Tables | Graph of a·bˣ + c | Table, plus range | Graph of a·b^(−x) + c |
+| Accelerated | 3.3 Writing Exponential Equations from a Graph | Point on the y-axis | Shifted exponent | Description only |
+| Accelerated | 3.4 Rewriting in y = abˣ Form | e laws, e^(kt) | Shifts and coefficients | Coefficients on x |
+| Accelerated | 3.4 Writing y = abˣ from Two Points | Point on the y-axis | Consecutive x-values | Farther apart, decimals, from a graph |
 
 ## Mock exams
 
